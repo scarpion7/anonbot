@@ -169,7 +169,7 @@ def age_female_keyboard():
 def female_choice_keyboard():
     builder = InlineKeyboardBuilder()
     builder.row(types.InlineKeyboardButton(text="👨 Erkak bilan", callback_data="choice_1"))
-    builder.row(types.InlineKeyboardButton(text="👥 MJM (2ta erkak)", callback_data="choice_2"))
+    builder.row(types.InlineKeyboardButton(text="👥 MJM (Begona erkaklar bilan)", callback_data="choice_2"))
     builder.row(types.InlineKeyboardButton(text="👭 JMJ (Dugonam bor)", callback_data="choice_3"))
     add_navigation_buttons(builder, "age_female")
     return builder.as_markup()
@@ -394,7 +394,7 @@ async def send_application_to_destinations(data: dict, user: types.User):
             channel_text += f"👨‍⚕️ **Erkak roziligi:** {husband_agree_text}\n"
 
     if data.get('about'):
-        channel_text += f"ℹ️ **Qo'shimcha / Kutilayotgan natija:** {data['about']}\n"
+        channel_text += f"ℹ️ **Qo'shimcha malumotlar :** {data['about']}\n"
 
     channel_text += "\n---\nBu ariza kanalga avtomatik joylandi."
 
@@ -431,7 +431,7 @@ async def start_handler(message: types.Message, state: FSMContext):
 @dp.callback_query(F.data == "cancel", F.chat.type == "private")
 async def cancel_handler(callback: types.CallbackQuery, state: FSMContext):
     if callback.from_user.id in chat_mode_users:
-        await callback.answer("Siz suhbat rejimidasiz. Suhbatni tugatish uchun /endchat ni bosing.", show_alert=True)
+        await callback.answer("Siz suhbat rejimidasiz.", show_alert=True)
         return
 
     await state.clear()
@@ -662,7 +662,7 @@ async def pose_woman_handler(callback: types.CallbackQuery, state: FSMContext):
         pose = POSES_WOMAN[pose_index]
         await state.update_data(pose=pose)
         logging.info(f"User {callback.from_user.id} chose female pose: {pose}")
-        await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n\n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:")
+        await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \nKo’rishish uchun sizda joy mavjudmi(batafsil yozing)??:\n\n")
         await state.set_state(Form.ABOUT)
     else:
         await callback.message.edit_text("Noto'g'ri pozitsiya tanlandi. Iltimos, qaytadan tanlang.",
@@ -695,7 +695,7 @@ async def mjm_experience_female_handler(callback: types.CallbackQuery, state: FS
             original_option_text = MJM_EXPERIENCE_FEMALE_OPTIONS[exp_index]
             await state.update_data(mjm_experience_female=original_option_text)
             logging.info(f"User {callback.from_user.id} chose MJM experience (female): {original_option_text}")
-            await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n\n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:")
+            await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:\n\n")
             await state.set_state(Form.ABOUT)
         else:
             await callback.message.edit_text("Noto'g'ri tanlov. Iltimos, qaytadan tanlang.",
@@ -726,7 +726,7 @@ async def jmj_details_handler(message: types.Message, state: FSMContext):
     if details and len(details) >= 10:
         await state.update_data(jmj_details=details)
         logging.info(f"User {message.from_user.id} entered JMJ details.")
-        await message.answer("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n\n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:")
+        await message.answer("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \nKo’rishish uchun sizda joy mavjudmi(batafsil yozing)??:\n\n")
         await state.set_state(Form.ABOUT)
     else:
         await message.answer("Iltimos, dugonangiz haqida kamida 10 ta belgidan iborat batafsil ma'lumot kiriting.")
@@ -795,7 +795,7 @@ async def family_wife_agreement_handler(callback: types.CallbackQuery, state: FS
     wife_agreement = callback.data.split("_")[2]
     await state.update_data(wife_agreement=wife_agreement)
     logging.info(f"User {callback.from_user.id} chose wife agreement: {wife_agreement}")
-    await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n\n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:")
+    await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:\n\n")
     await state.set_state(Form.ABOUT)
     await callback.answer()
 
@@ -809,7 +809,7 @@ async def family_wife_choice_handler(callback: types.CallbackQuery, state: FSMCo
         await callback.message.edit_text("Erakning roziligi:", reply_markup=family_husband_agreement_keyboard())
         await state.set_state(Form.FAMILY_HUSBAND_AGREEMENT)
     elif w_choice in ["mjm_strangers", "erkak"]:
-        await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n\n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:")
+        await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:\n\n")
         await state.set_state(Form.ABOUT)
     await callback.answer()
 
@@ -818,7 +818,7 @@ async def family_husband_agreement_handler(callback: types.CallbackQuery, state:
     husband_agreement = callback.data.split("_")[2]
     await state.update_data(husband_agreement=husband_agreement)
     logging.info(f"User {callback.from_user.id} chose husband agreement: {husband_agreement}")
-    await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n\n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:")
+    await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:\n\n")
     await state.set_state(Form.ABOUT)
     await callback.answer()
 
