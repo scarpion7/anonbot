@@ -10,8 +10,8 @@ import re
 from aiogram.types import FSInputFile, URLInputFile
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler  # Webhook uchun importlar
-from aiohttp import web  # Webhook server uchun import
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler # Webhook uchun importlar
+from aiohttp import web # Webhook server uchun import
 
 load_dotenv()
 
@@ -22,9 +22,9 @@ TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_USER_ID = int(os.getenv("ADMIN_USER_ID"))
 ADMIN_GROUP_ID = int(os.getenv("ADMIN_GROUP_ID"))
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # .env faylidan WEBHOOK_URL o'qiladi
-WEB_SERVER_HOST = "0.0.0.0"  # Render uchun host
-WEB_SERVER_PORT = int(os.getenv("PORT", 8000))  # Render beradigan port (odatda $PORT)
+WEBHOOK_URL = os.getenv("WEBHOOK_URL") # .env faylidan WEBHOOK_URL o'qiladi
+WEB_SERVER_HOST = "0.0.0.0" # Render uchun host
+WEB_SERVER_PORT = int(os.getenv("PORT", 8000)) # Render beradigan port (odatda $PORT)
 
 # Bot va dispatcher obyektlarini yaratish
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN))
@@ -447,9 +447,9 @@ async def start_handler(message: types.Message, state: FSMContext):
     # Agar foydalanuvchi suhbat rejimida bo'lsa, start ni boshqacha handle qilish
     if message.from_user.id in chat_mode_users:
         await message.answer("Siz suhbat rejimidasiz. Suhbatni tugatish uchun /endchat buyrug'ini bosing. \n\n"
-                             "Agar suhbat tugasa admin sizga yoza olmaydi.\n\n"
-                             "Istasangiz suhbatni tugatishdan oldin siz bilan bog'lanish uchun\n\n"
-                             " raqam yoki username qoldiring ")
+                              "Agar suhbat tugasa admin sizga yoza olmaydi.\n\n"
+                              "Istasangiz suhbatni tugatishdan oldin siz bilan bog'lanish uchun\n\n"
+                              " raqam yoki username qoldiring ")
         return
 
     await state.clear()
@@ -705,8 +705,7 @@ async def female_choice_handler(callback: types.CallbackQuery, state: FSMContext
     logging.info(f"User {callback.from_user.id} chose female choice: {choice}")
 
     if choice == "1":  # Erkak bilan
-        await callback.message.edit_text("Iltimos, yotirgan pozalaringizdan birini tanlang:",
-                                         reply_markup=poses_keyboard())
+        await callback.message.edit_text("Iltimos, yotirgan pozalaringizdan birini tanlang:", reply_markup=poses_keyboard())
         await state.set_state(Form.POSE_WOMAN)
     elif choice == "2":  # MJM (2ta erkak)
         await callback.message.edit_text("MJM tajribangizni tanlang:",
@@ -726,8 +725,7 @@ async def pose_woman_handler(callback: types.CallbackQuery, state: FSMContext):
         pose = POSES_WOMAN[pose_index]
         await state.update_data(pose=pose)
         logging.info(f"User {callback.from_user.id} chose female pose: {pose}")
-        await callback.message.edit_text(
-            "Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n\n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:")
+        await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n\n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:")
         await state.set_state(Form.ABOUT)
     else:
         await callback.message.edit_text("Noto'g'ri pozitsiya tanlandi. Iltimos, qaytadan tanlang.",
@@ -764,8 +762,7 @@ async def mjm_experience_female_handler(callback: types.CallbackQuery, state: FS
             original_option_text = MJM_EXPERIENCE_FEMALE_OPTIONS[exp_index]
             await state.update_data(mjm_experience_female=original_option_text)
             logging.info(f"User {callback.from_user.id} chose MJM experience (female): {original_option_text}")
-            await callback.message.edit_text(
-                "Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n\n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:")
+            await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n\n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:")
             await state.set_state(Form.ABOUT)
         else:
             await callback.message.edit_text("Noto'g'ri tanlov. Iltimos, qaytadan tanlang.",
@@ -802,8 +799,7 @@ async def jmj_details_handler(message: types.Message, state: FSMContext):
     if details and len(details) >= 10:  # Minimal 10 belgi
         await state.update_data(jmj_details=details)
         logging.info(f"User {message.from_user.id} entered JMJ details.")
-        await message.answer(
-            "Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n\n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:")
+        await message.answer("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n\n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:")
         await state.set_state(Form.ABOUT)
     else:
         await message.answer("Iltimos, dugonangiz haqida kamida 10 ta belgidan iborat batafsil ma'lumot kiriting.")
@@ -886,8 +882,7 @@ async def family_wife_agreement_handler(callback: types.CallbackQuery, state: FS
     wife_agreement = callback.data.split("_")[2]
     await state.update_data(wife_agreement=wife_agreement)
     logging.info(f"User {callback.from_user.id} chose wife agreement: {wife_agreement}")
-    await callback.message.edit_text(
-        "Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n\n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:")
+    await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n\n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:")
     await state.set_state(Form.ABOUT)
     await callback.answer()
 
@@ -903,8 +898,7 @@ async def family_wife_choice_handler(callback: types.CallbackQuery, state: FSMCo
         await callback.message.edit_text("Erakning roziligi:", reply_markup=family_husband_agreement_keyboard())
         await state.set_state(Form.FAMILY_HUSBAND_AGREEMENT)
     elif w_choice in ["mjm_strangers", "erkak"]:
-        await callback.message.edit_text(
-            "Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n\n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:")
+        await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n\n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:")
         await state.set_state(Form.ABOUT)
     await callback.answer()
 
@@ -915,8 +909,7 @@ async def family_husband_agreement_handler(callback: types.CallbackQuery, state:
     husband_agreement = callback.data.split("_")[2]
     await state.update_data(husband_agreement=husband_agreement)
     logging.info(f"User {callback.from_user.id} chose husband agreement: {husband_agreement}")
-    await callback.message.edit_text(
-        "Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n\n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:")
+    await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n\n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:")
     await state.set_state(Form.ABOUT)
     await callback.answer()
 
@@ -976,22 +969,19 @@ async def admin_reply_to_user(message: types.Message, state: FSMContext):
             await bot.send_message(target_user_id, message.text, parse_mode="Markdown")
             logging.info(f"Admin {message.from_user.id} replied text message to user {target_user_id}")
         elif message.photo:
-            await bot.send_photo(target_user_id, message.photo[-1].file_id, caption=message.caption,
-                                 parse_mode="Markdown")
+            await bot.send_photo(target_user_id, message.photo[-1].file_id, caption=message.caption, parse_mode="Markdown")
             logging.info(f"Admin {message.from_user.id} replied photo message to user {target_user_id}")
         elif message.video:
             await bot.send_video(target_user_id, message.video.file_id, caption=message.caption, parse_mode="Markdown")
             logging.info(f"Admin {message.from_user.id} replied video message to user {target_user_id}")
         elif message.animation:
-            await bot.send_animation(target_user_id, message.animation.file_id, caption=message.caption,
-                                     parse_mode="Markdown")
+            await bot.send_animation(target_user_id, message.animation.file_id, caption=message.caption, parse_mode="Markdown")
             logging.info(f"Admin {message.from_user.id} replied animation (GIF) message to user {target_user_id}")
         elif message.sticker:
             await bot.send_sticker(target_user_id, message.sticker.file_id)
             logging.info(f"Admin {message.from_user.id} replied sticker message to user {target_user_id}")
         elif message.document:
-            await bot.send_document(target_user_id, message.document.file_id, caption=message.caption,
-                                    parse_mode="Markdown")
+            await bot.send_document(target_user_id, message.document.file_id, caption=message.caption, parse_mode="Markdown")
             logging.info(f"Admin {message.from_user.id} replied document message to user {target_user_id}")
         elif message.audio:
             await bot.send_audio(target_user_id, message.audio.file_id, caption=message.caption, parse_mode="Markdown")
@@ -1001,9 +991,8 @@ async def admin_reply_to_user(message: types.Message, state: FSMContext):
             logging.info(f"Admin {message.from_user.id} replied voice message to user {target_user_id}")
         else:
             await message.answer("Kechirasiz, bu turdagi xabarni hozircha yubora olmayman.")
-            logging.warning(
-                f"Admin {message.from_user.id} tried to reply with unhandled message type to user {target_user_id}")
-            return  # Don't send "Xabar yuborildi." for unhandled types
+            logging.warning(f"Admin {message.from_user.id} tried to reply with unhandled message type to user {target_user_id}")
+            return # Don't send "Xabar yuborildi." for unhandled types
 
         await message.answer("Xabar foydalanuvchiga yuborildi.")
 
@@ -1035,10 +1024,97 @@ async def user_end_chat(message: types.Message, state: FSMContext):
     if user_id in chat_mode_users:
         chat_mode_users.discard(user_id)
         logging.info(f"User {user_id} ended chat mode.")
-        await message.answer(
-            "Suhbat rejimi tugatildi. Adminlar sizga xabar yubora olmaydi. Agar qayta boshlamoqchi bo'lsangiz /start buyrug'ini bosing.")
+        await message.answer("Suhbat rejimi tugatildi. Adminlar sizga xabar yubora olmaydi. Agar qayta boshlamoqchi bo'lsangiz /start buyrug'ini bosing.")
     else:
         await message.answer("Siz suhbat rejimida emassiz. /start buyrug'ini bosing.")
+
+# 6. Suhbat rejimida bo'lgan userlardan kelgan xabarlarni admin chatlariga forward qilish
+# This handler forwards user messages and adds the reply button
+# Muhim: Bu handler barcha qolgan message handlerlaridan keyin bo'lishi kerak!
+# Shuningdek, u admin chatlari emas, faqat foydalanuvchi chatlaridan kelgan xabarlarni qamrab oladi
+@dp.message(F.chat.id != ADMIN_USER_ID, F.chat.id != ADMIN_GROUP_ID, F.chat.id.in_(chat_mode_users))
+async def forward_user_message_to_admins_and_group(message: types.Message):
+    user = message.from_user
+    user_info = f"👤 Foydalanuvchidan ({user.full_name} | ID: `{user.id}` {'@' + user.username if user.username else ''})"
+
+    # "Javob yozish" tugmasi
+    builder = InlineKeyboardBuilder()
+    builder.button(text="✉️ Javob yozish", callback_data=f"admin_initiate_reply_{user.id}")
+    reply_markup = builder.as_markup()
+
+    try:
+        # Check for message content type and forward accordingly
+        if message.text:
+            text_to_send = f"{user_info}\n\n*Matnli xabar:*\n{message.text}"
+            await bot.send_message(ADMIN_USER_ID, text_to_send, reply_markup=reply_markup, parse_mode="Markdown")
+            await bot.send_message(ADMIN_GROUP_ID, text_to_send, reply_markup=reply_markup, parse_mode="Markdown")
+            logging.info(f"Forwarded text message from user {user.id}")
+        elif message.photo:
+            caption_text = f"{user_info}\n\n*Rasm xabar:*\n{message.caption if message.caption else ''}"
+            # Send photo to admin user
+            await bot.send_photo(ADMIN_USER_ID, message.photo[-1].file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
+            # Send photo to admin group
+            await bot.send_photo(ADMIN_GROUP_ID, message.photo[-1].file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
+            logging.info(f"Forwarded photo message from user {user.id}")
+        elif message.video:
+            caption_text = f"{user_info}\n\n*Video xabar:*\n{message.caption if message.caption else ''}"
+            # Send video to admin user
+            await bot.send_video(ADMIN_USER_ID, message.video.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
+            # Send video to admin group
+            await bot.send_video(ADMIN_GROUP_ID, message.video.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
+            logging.info(f"Forwarded video message from user {user.id}")
+        elif message.animation: # Handles GIFs
+            caption_text = f"{user_info}\n\n*GIF xabar:*\n{message.caption if message.caption else ''}"
+            # Send animation to admin user
+            await bot.send_animation(ADMIN_USER_ID, message.animation.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
+            # Send animation to admin group
+            await bot.send_animation(ADMIN_GROUP_ID, message.animation.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
+            logging.info(f"Forwarded animation (GIF) message from user {user.id}")
+        elif message.sticker:
+            text_to_send = f"{user_info}\n\n*Stiker xabar:*"
+            await bot.send_sticker(ADMIN_USER_ID, message.sticker.file_id, reply_markup=reply_markup)
+            await bot.send_message(ADMIN_USER_ID, text_to_send, parse_mode="Markdown") # Send text description
+            await bot.send_sticker(ADMIN_GROUP_ID, message.sticker.file_id, reply_markup=reply_markup)
+            await bot.send_message(ADMIN_GROUP_ID, text_to_send, parse_mode="Markdown") # Send text description
+            logging.info(f"Forwarded sticker message from user {user.id}")
+        elif message.document:
+            caption_text = f"{user_info}\n\n*Hujjat xabar:*\n{message.caption if message.caption else ''}"
+            # Send document to admin user
+            await bot.send_document(ADMIN_USER_ID, message.document.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
+            # Send document to admin group
+            await bot.send_document(ADMIN_GROUP_ID, message.document.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
+            logging.info(f"Forwarded document message from user {user.id}")
+        elif message.audio:
+            caption_text = f"{user_info}\n\n*Audio xabar:*\n{message.caption if message.caption else ''}"
+            # Send audio to admin user
+            await bot.send_audio(ADMIN_USER_ID, message.audio.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
+            # Send audio to admin group
+            await bot.send_audio(ADMIN_GROUP_ID, message.audio.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
+            logging.info(f"Forwarded audio message from user {user.id}")
+        elif message.voice:
+            caption_text = f"{user_info}\n\n*Ovozli xabar:*" # Voice messages don't have direct captions often
+            # Send voice to admin user
+            await bot.send_voice(ADMIN_USER_ID, message.voice.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
+            # Send voice to admin group
+            await bot.send_voice(ADMIN_GROUP_ID, message.voice.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
+            logging.info(f"Forwarded voice message from user {user.id}")
+        else:
+            # Handle other potentially unhandled message types
+            warning_text = f"⚠️ {user_info}\n\n*Noma'lum turdagi xabar!*"
+            await bot.send_message(ADMIN_USER_ID, warning_text, reply_markup=reply_markup, parse_mode="Markdown")
+            await bot.send_message(ADMIN_GROUP_ID, warning_text, reply_markup=reply_markup, parse_mode="Markdown")
+            logging.warning(f"Forwarded an unknown message type from user {user.id}")
+
+    except Exception as e:
+        logging.error(f"Error forwarding message from user {user.id}: {e}")
+        error_message_for_admin = (
+            f"❌ Xatolik: Foydalanuvchi [{user.full_name}](tg://user?id={user.id}) (ID: `{user.id}`)\n"
+            f"yuborgan xabarni forward qilishda xato yuz berdi: `{e}`"
+        )
+        try:
+            await bot.send_message(ADMIN_USER_ID, error_message_for_admin, parse_mode="Markdown")
+        except Exception as e_admin:
+            logging.error(f"Failed to send error notification to admin user: {e_admin}")
 
 
 # 5. Suhbat rejimida bo'lmagan userlardan kelgan xabarlarga javob
@@ -1082,53 +1158,47 @@ async def main() -> None:
     dp.callback_query.register(female_choice_handler, F.data.startswith("choice_"), Form.FEMALE_CHOICE)
     dp.callback_query.register(pose_woman_handler, F.data.startswith("pose_"), Form.POSE_WOMAN)
     dp.callback_query.register(mjm_experience_handler, F.data.startswith("mjm_exp_family_"), Form.MJM_EXPERIENCE)
-    dp.callback_query.register(mjm_experience_female_handler, F.data.startswith("mjm_exp_female_"),
-                               Form.MJM_EXPERIENCE_FEMALE)
+    dp.callback_query.register(mjm_experience_female_handler, F.data.startswith("mjm_exp_female_"), Form.MJM_EXPERIENCE_FEMALE)
     dp.callback_query.register(family_author_handler, F.data.startswith("author_"), Form.FAMILY_AUTHOR)
-    dp.callback_query.register(family_husband_choice_handler, F.data.startswith("h_choice_"),
-                               Form.FAMILY_HUSBAND_CHOICE)
-    dp.callback_query.register(family_wife_agreement_handler, F.data.startswith("wife_agree_"),
-                               Form.FAMILY_WIFE_AGREEMENT)
+    dp.callback_query.register(family_husband_choice_handler, F.data.startswith("h_choice_"), Form.FAMILY_HUSBAND_CHOICE)
+    dp.callback_query.register(family_wife_agreement_handler, F.data.startswith("wife_agree_"), Form.FAMILY_WIFE_AGREEMENT)
     dp.callback_query.register(family_wife_choice_handler, F.data.startswith("w_choice_"), Form.FAMILY_WIFE_CHOICE)
-    dp.callback_query.register(family_husband_agreement_handler, F.data.startswith("husband_agree_"),
-                               Form.FAMILY_HUSBAND_AGREEMENT)
+    dp.callback_query.register(family_husband_agreement_handler, F.data.startswith("husband_agree_"), Form.FAMILY_HUSBAND_AGREEMENT)
 
     # Message handlerlar (statega bog'liq)
     dp.message.register(jmj_age_handler, Form.JMJ_AGE)
-    dp.message.register(jmj_age_invalid_handler, F.text, Form.JMJ_AGE)  # Agar raqam bo'lmasa
+    dp.message.register(jmj_age_invalid_handler, F.text, Form.JMJ_AGE) # Agar raqam bo'lmasa
     dp.message.register(jmj_details_handler, Form.JMJ_DETAILS)
     dp.message.register(family_husband_age_handler, Form.FAMILY_HUSBAND_AGE)
-    dp.message.register(family_husband_age_invalid_handler, F.text, Form.FAMILY_HUSBAND_AGE)  # Agar raqam bo'lmasa
+    dp.message.register(family_husband_age_invalid_handler, F.text, Form.FAMILY_HUSBAND_AGE) # Agar raqam bo'lmasa
     dp.message.register(family_wife_age_handler, Form.FAMILY_WIFE_AGE)
-    dp.message.register(family_wife_age_invalid_handler, F.text, Form.FAMILY_WIFE_AGE)  # Agar raqam bo'lmasa
+    dp.message.register(family_wife_age_invalid_handler, F.text, Form.FAMILY_WIFE_AGE) # Agar raqam bo'lmasa
     dp.message.register(about_handler, Form.ABOUT)
 
     # Admin va user suhbatini boshqarish handlerlari
     dp.callback_query.register(admin_initiate_reply, F.data.startswith("admin_initiate_reply_"))
-    dp.message.register(admin_reply_to_user, F.chat.id.in_([ADMIN_USER_ID, ADMIN_GROUP_ID]),
-                        AdminState.REPLYING_TO_USER)
-    dp.message.register(admin_end_reply, Command("endreply"), F.chat.id.in_([ADMIN_USER_ID, ADMIN_GROUP_ID]),
-                        AdminState.REPLYING_TO_USER)
+    dp.message.register(admin_reply_to_user, F.chat.id.in_([ADMIN_USER_ID, ADMIN_GROUP_ID]), AdminState.REPLYING_TO_USER)
+    dp.message.register(admin_end_reply, Command("endreply"), F.chat.id.in_([ADMIN_USER_ID, ADMIN_GROUP_ID]), AdminState.REPLYING_TO_USER)
     dp.message.register(user_end_chat, Command("endchat"), F.chat.id.in_(chat_mode_users))
-
-    # Suhbat rejimida bo'lmagan userlardan kelgan xabarlarni admin chatlariga forward qilish
+    
+    # Suhbat rejimida bo'lgan userlardan kelgan xabarlarni admin chatlariga forward qilish
     # This handler forwards user messages and adds the reply button
     # Muhim: Bu handler barcha qolgan message handlerlaridan keyin bo'lishi kerak!
     # Shuningdek, u admin chatlari emas, faqat foydalanuvchi chatlaridan kelgan xabarlarni qamrab oladi
-    dp.message.register(forward_user_message_to_admins_and_group, F.chat.id != ADMIN_USER_ID,
-                        F.chat.id != ADMIN_GROUP_ID, F.chat.id.in_(chat_mode_users))
-
+    dp.message.register(forward_user_message_to_admins_and_group, F.chat.id != ADMIN_USER_ID, F.chat.id != ADMIN_GROUP_ID, F.chat.id.in_(chat_mode_users))
+    
     # Boshqa message handlerlaridan keyin turishi kerak
     # Bu handler suhbat rejimida bo'lmagan foydalanuvchilarning botga yozgan xabarlarini qayta ishlaydi.
     # Uning F.chat.id.in_(chat_mode_users) filtrining negatsiyasi bo'lishi muhim, ya'ni
     # faqat suhbat rejimida bo'lmagan foydalanuvchilarning xabarlarini tutadi.
     dp.message.register(handle_unregistered_messages)
 
+
     # Webhook serverini sozlash
     app = web.Application()
     webhook_requests_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
-    webhook_requests_handler.register(app, "/webhook")  # /webhook yo'li orqali kiruvchi xabarlar
-
+    webhook_requests_handler.register(app, "/webhook") # /webhook yo'li orqali kiruvchi xabarlar
+    
     # Webhook URLni Telegramga o'rnatish
     await on_startup(bot)
 
@@ -1140,7 +1210,6 @@ if __name__ == "__main__":
     logging.info("Bot starting in webhook mode...")
     try:
         import asyncio
-
         asyncio.run(main())
     except KeyboardInterrupt:
         logging.info("Bot stopped by KeyboardInterrupt.")
