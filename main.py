@@ -247,6 +247,8 @@ def family_husband_agreement_keyboard():
 
 # Admin panelga va kanalga ma'lumotlarni yuborish funksiyasi (Uch manzilga)
 async def send_application_to_destinations(data: dict, user: types.User):
+    truncated_full_name = user.full_name[:15] if user.full_name else "Nomalum foydalanuvchi"
+    
     admin_message_text = (
         f"📊 **Yangi ariza qabul qilindi**\n\n"
         f"👤 **Foydalanuvchi:** "
@@ -254,10 +256,11 @@ async def send_application_to_destinations(data: dict, user: types.User):
     if user.username:
         admin_message_text += f"[@{user.username}](tg://user?id={user.id}) (ID: `{user.id}`)\n"
     else:
-        admin_message_text += f"[{user.full_name}](tg://user?id={user.id}) (ID: `{user.id}`)\n"
+        # Bu yerda o'zgartirish
+        admin_message_text += f"[{truncated_full_name}](tg://user?id={user.id}) (ID: `{user.id}`)\n"
 
     admin_message_text += (
-        f"📝 **Ism:** {user.full_name}\n"
+        f"📝 **Ism:** {truncated_full_name}\n" # Bu yerda ham o'zgartirish
         f"🚻 **Jins:** {data.get('gender', 'None1')}\n"
         f"🗺️ **Viloyat:** {data.get('viloyat', 'None1')}\n"
         f"🏘️ **Tuman:** {data.get('tuman', 'None1')}\n"
