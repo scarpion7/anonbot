@@ -850,6 +850,8 @@ async def admin_initiate_reply(callback: types.CallbackQuery, state: FSMContext)
     await callback.answer()
     logging.info(f"Admin {callback.from_user.id} initiated reply to user {user_id_to_reply}")
 
+from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
+
 @dp.message(F.chat.id.in_([ADMIN_USER_ID, ADMIN_GROUP_ID]), AdminState.REPLYING_TO_USER)
 async def admin_reply_to_user(message: types.Message, state: FSMContext):
     data = await state.get_data()
@@ -862,39 +864,81 @@ async def admin_reply_to_user(message: types.Message, state: FSMContext):
 
     try:
         if message.text:
-            await bot.send_message(target_user_id, message.text, parse_mode="Markdown")
-            logging.info(f"Admin {message.from_user.id} replied text message to user {target_user_id}")
+            try:
+                await bot.send_message(target_user_id, message.text, parse_mode="Markdown")
+                logging.info(f"Admin {message.from_user.id} replied text message to user {target_user_id}")
+            except TelegramForbiddenError:
+                await message.answer("❌ Foydalanuvchi botni bloklagan. Xabar yuborilmadi.")
+                logging.warning(f"User {target_user_id} has blocked the bot.")
+                return
+
         elif message.photo:
-            await bot.send_photo(target_user_id, message.photo[-1].file_id, caption=message.caption, parse_mode="Markdown")
-            logging.info(f"Admin {message.from_user.id} replied photo message to user {target_user_id}")
+            try:
+                await bot.send_photo(target_user_id, message.photo[-1].file_id, caption=message.caption, parse_mode="Markdown")
+                logging.info(f"Admin {message.from_user.id} replied photo message to user {target_user_id}")
+            except TelegramForbiddenError:
+                await message.answer("❌ Foydalanuvchi botni bloklagan. Rasm yuborilmadi.")
+                return
+
         elif message.video:
-            await bot.send_video(target_user_id, message.video.file_id, caption=message.caption, parse_mode="Markdown")
-            logging.info(f"Admin {message.from_user.id} replied video message to user {target_user_id}")
+            try:
+                await bot.send_video(target_user_id, message.video.file_id, caption=message.caption, parse_mode="Markdown")
+                logging.info(f"Admin {message.from_user.id} replied video message to user {target_user_id}")
+            except TelegramForbiddenError:
+                await message.answer("❌ Foydalanuvchi botni bloklagan. Video yuborilmadi.")
+                return
+
         elif message.animation:
-            await bot.send_animation(target_user_id, message.animation.file_id, caption=message.caption, parse_mode="Markdown")
-            logging.info(f"Admin {message.from_user.id} replied animation (GIF) message to user {target_user_id}")
+            try:
+                await bot.send_animation(target_user_id, message.animation.file_id, caption=message.caption, parse_mode="Markdown")
+                logging.info(f"Admin {message.from_user.id} replied animation (GIF) to user {target_user_id}")
+            except TelegramForbiddenError:
+                await message.answer("❌ Foydalanuvchi botni bloklagan. GIF yuborilmadi.")
+                return
+
         elif message.sticker:
-            await bot.send_sticker(target_user_id, message.sticker.file_id)
-            logging.info(f"Admin {message.from_user.id} replied sticker message to user {target_user_id}")
+            try:
+                await bot.send_sticker(target_user_id, message.sticker.file_id)
+                logging.info(f"Admin {message.from_user.id} replied sticker to user {target_user_id}")
+            except TelegramForbiddenError:
+                await message.answer("❌ Foydalanuvchi botni bloklagan. Sticker yuborilmadi.")
+                return
+
         elif message.document:
-            await bot.send_document(target_user_id, message.document.file_id, caption=message.caption, parse_mode="Markdown")
-            logging.info(f"Admin {message.from_user.id} replied document message to user {target_user_id}")
+            try:
+                await bot.send_document(target_user_id, message.document.file_id, caption=message.caption, parse_mode="Markdown")
+                logging.info(f"Admin {message.from_user.id} replied document to user {target_user_id}")
+            except TelegramForbiddenError:
+                await message.answer("❌ Foydalanuvchi botni bloklagan. Hujjat yuborilmadi.")
+                return
+
         elif message.audio:
-            await bot.send_audio(target_user_id, message.audio.file_id, caption=message.caption, parse_mode="Markdown")
-            logging.info(f"Admin {message.from_user.id} replied audio message to user {target_user_id}")
+            try:
+                await bot.send_audio(target_user_id, message.audio.file_id, caption=message.caption, parse_mode="Markdown")
+                logging.info(f"Admin {message.from_user.id} replied audio to user {target_user_id}")
+            except TelegramForbiddenError:
+                await message.answer("❌ Foydalanuvchi botni bloklagan. Audio yuborilmadi.")
+                return
+
         elif message.voice:
-            await bot.send_voice(target_user_id, message.voice.file_id, caption=message.caption, parse_mode="Markdown")
-            logging.info(f"Admin {message.from_user.id} replied voice message to user {target_user_id}")
+            try:
+                await bot.send_voice(target_user_id, message.voice.file_id, caption=message.caption, parse_mode="Markdown")
+                logging.info(f"Admin {message.from_user.id} replied voice to user {target_user_id}")
+            except TelegramForbiddenError:
+                await message.answer("❌ Foydalanuvchi botni bloklagan. Ovoz yuborilmadi.")
+                return
+
         else:
             await message.answer("Kechirasiz, bu turdagi xabarni hozircha yubora olmayman.")
-            logging.warning(f"Admin {message.from_user.id} tried to reply with unhandled message type to user {target_user_id}")
+            logging.warning(f"Admin {message.from_user.id} tried to reply with unsupported message type to user {target_user_id}")
             return
 
-        await message.answer("Xabar foydalanuvchiga yuborildi.")
+        await message.answer("✅ Xabar foydalanuvchiga yuborildi.")
 
     except Exception as e:
-        logging.error(f"Error replying to user {target_user_id} from admin {message.from_user.id}: {e}")
-        await message.answer(f"Xabar yuborishda xatolik yuz berdi: {e}")
+        logging.error(f"❌ Umumiy xatolik: Error replying to user {target_user_id} from admin {message.from_user.id}: {e}")
+        await message.answer(f"⚠️ Xabar yuborishda kutilmagan xatolik yuz berdi: {e}")
+
 
 @dp.message(Command("endreply"), F.chat.id.in_([ADMIN_USER_ID, ADMIN_GROUP_ID]), AdminState.REPLYING_TO_USER)
 async def admin_end_reply(message: types.Message, state: FSMContext):
