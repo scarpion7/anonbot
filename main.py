@@ -7,6 +7,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 import re
+from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
 from aiogram.types import FSInputFile, URLInputFile
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -850,7 +851,6 @@ async def admin_initiate_reply(callback: types.CallbackQuery, state: FSMContext)
     await callback.answer()
     logging.info(f"Admin {callback.from_user.id} initiated reply to user {user_id_to_reply}")
 
-from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
 
 @dp.message(F.chat.id.in_([ADMIN_USER_ID, ADMIN_GROUP_ID]), AdminState.REPLYING_TO_USER)
 async def admin_reply_to_user(message: types.Message, state: FSMContext):
