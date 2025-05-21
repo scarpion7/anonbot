@@ -414,7 +414,7 @@ async def send_application_to_destinations(data: dict, user: types.User):
         except Exception as e_admin:
             logging.error(f"Failed to send error notification to admin user about channel error: {e_admin}")
 
-@dp.message(Command("start"))
+@dp.message(Command("start"), F.chat.type == "private")
 async def start_handler(message: types.Message, state: FSMContext):
     if message.from_user.id in chat_mode_users:
         await message.answer("Siz suhbat rejimidasiz. Suhbatni tugatish uchun /endchat buyrug'ini bosing. \n\n"
@@ -428,7 +428,7 @@ async def start_handler(message: types.Message, state: FSMContext):
     await state.set_state(Form.CHOOSE_GENDER)
     logging.info(f"User {message.from_user.id} started the bot.")
 
-@dp.callback_query(F.data == "cancel")
+@dp.callback_query(F.data == "cancel", F.chat.type == "private")
 async def cancel_handler(callback: types.CallbackQuery, state: FSMContext):
     if callback.from_user.id in chat_mode_users:
         await callback.answer("Siz suhbat rejimidasiz. Suhbatni tugatish uchun /endchat ni bosing.", show_alert=True)
@@ -439,7 +439,7 @@ async def cancel_handler(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     logging.info(f"User {callback.from_user.id} cancelled the form.")
 
-@dp.callback_query(F.data == "about_bot")
+@dp.callback_query(F.data == "about_bot", F.chat.type == "private")
 async def about_bot_handler(callback: types.CallbackQuery):
     about_text = (
         "Bu bot orqali siz o'zingizga mos juftlikni topishingiz mumkin.\n"
@@ -454,7 +454,7 @@ async def about_bot_handler(callback: types.CallbackQuery):
                                                                                              callback_data="back_start").as_markup())
     await callback.answer()
 
-@dp.callback_query(F.data.startswith("back_"))
+@dp.callback_query(F.data.startswith("back_"), F.chat.type == "private")
 async def back_handler(callback: types.CallbackQuery, state: FSMContext):
     if callback.from_user.id in chat_mode_users:
         await callback.answer("Siz suhbat rejimidasiz. Suhbatni tugatish uchun /endchat buyrug'ini bosing. \n\n"
@@ -582,7 +582,7 @@ async def back_handler(callback: types.CallbackQuery, state: FSMContext):
             logging.warning(f"User {callback.from_user.id} back from ABOUT with no determined previous state.")
     await callback.answer()
 
-@dp.callback_query(F.data.startswith("gender_"), Form.CHOOSE_GENDER)
+@dp.callback_query(F.data.startswith("gender_"), F.chat.type == "private", Form.CHOOSE_GENDER)
 async def gender_handler(callback: types.CallbackQuery, state: FSMContext):
     gender = callback.data.split("_")[1]
     await state.update_data(gender=gender)
@@ -605,7 +605,7 @@ async def gender_handler(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(Form.VILOYAT)
     await callback.answer()
 
-@dp.callback_query(F.data.startswith("vil_"), Form.VILOYAT)
+@dp.callback_query(F.data.startswith("vil_"), F.chat.type == "private", Form.VILOYAT)
 async def viloyat_handler(callback: types.CallbackQuery, state: FSMContext):
     viloyat = callback.data.split("_")[1]
     await state.update_data(viloyat=viloyat)
@@ -614,7 +614,7 @@ async def viloyat_handler(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(Form.TUMAN)
     await callback.answer()
 
-@dp.callback_query(F.data.startswith("tum_"), Form.TUMAN)
+@dp.callback_query(F.data.startswith("tum_"), F.chat.type == "private", Form.TUMAN)
 async def tuman_handler(callback: types.CallbackQuery, state: FSMContext):
     tuman = callback.data.split("_")[1]
     await state.update_data(tuman=tuman)
@@ -628,7 +628,7 @@ async def tuman_handler(callback: types.CallbackQuery, state: FSMContext):
         await state.set_state(Form.FAMILY_HUSBAND_AGE)
     await callback.answer()
 
-@dp.callback_query(F.data.startswith("age_"), Form.AGE_FEMALE)
+@dp.callback_query(F.data.startswith("age_"), F.chat.type == "private", Form.AGE_FEMALE)
 async def age_female_handler(callback: types.CallbackQuery, state: FSMContext):
     age = callback.data.split("_")[1]
     await state.update_data(age=age)
@@ -637,7 +637,7 @@ async def age_female_handler(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(Form.FEMALE_CHOICE)
     await callback.answer()
 
-@dp.callback_query(F.data.startswith("choice_"), Form.FEMALE_CHOICE)
+@dp.callback_query(F.data.startswith("choice_"), F.chat.type == "private", Form.FEMALE_CHOICE)
 async def female_choice_handler(callback: types.CallbackQuery, state: FSMContext):
     choice = callback.data.split("_")[1]
     await state.update_data(choice=choice)
@@ -655,7 +655,7 @@ async def female_choice_handler(callback: types.CallbackQuery, state: FSMContext
         await state.set_state(Form.JMJ_AGE)
     await callback.answer()
 
-@dp.callback_query(F.data.startswith("pose_"), Form.POSE_WOMAN)
+@dp.callback_query(F.data.startswith("pose_"), F.chat.type == "private", Form.POSE_WOMAN)
 async def pose_woman_handler(callback: types.CallbackQuery, state: FSMContext):
     pose_index = int(callback.data.split("_")[1]) - 1
     if 0 <= pose_index < len(POSES_WOMAN):
@@ -669,7 +669,7 @@ async def pose_woman_handler(callback: types.CallbackQuery, state: FSMContext):
                                          reply_markup=poses_keyboard())
     await callback.answer()
 
-@dp.callback_query(F.data.startswith("mjm_exp_family_"), Form.MJM_EXPERIENCE)
+@dp.callback_query(F.data.startswith("mjm_exp_family_"), F.chat.type == "private", Form.MJM_EXPERIENCE)
 async def mjm_experience_handler(callback: types.CallbackQuery, state: FSMContext):
     try:
         exp_index = int(callback.data.split("_")[-1])
@@ -687,7 +687,7 @@ async def mjm_experience_handler(callback: types.CallbackQuery, state: FSMContex
                                          reply_markup=mjm_experience_keyboard(is_female=False))
     await callback.answer()
 
-@dp.callback_query(F.data.startswith("mjm_exp_female_"), Form.MJM_EXPERIENCE_FEMALE)
+@dp.callback_query(F.data.startswith("mjm_exp_female_"), F.chat.type == "private", Form.MJM_EXPERIENCE_FEMALE)
 async def mjm_experience_female_handler(callback: types.CallbackQuery, state: FSMContext):
     try:
         exp_index = int(callback.data.split("_")[-1])
@@ -705,7 +705,7 @@ async def mjm_experience_female_handler(callback: types.CallbackQuery, state: FS
                                          reply_markup=mjm_experience_keyboard(is_female=True))
     await callback.answer()
 
-@dp.message(Form.JMJ_AGE)
+@dp.message(F.text, F.chat.type == "private", Form.JMJ_AGE)
 async def jmj_age_handler(message: types.Message, state: FSMContext):
     age_input = message.text
     if age_input and age_input.isdigit() and 18 <= int(age_input) <= 60:
@@ -720,7 +720,7 @@ async def jmj_age_handler(message: types.Message, state: FSMContext):
 async def jmj_age_invalid_handler(message: types.Message):
     await message.answer("Yoshingizni faqat raqamlarda kiriting. Iltimos, qaytadan urinib ko'ring.")
 
-@dp.message(Form.JMJ_DETAILS)
+@dp.message(F.text, F.chat.type == "private", Form.JMJ_DETAILS)
 async def jmj_details_handler(message: types.Message, state: FSMContext):
     details = message.text
     if details and len(details) >= 10:
@@ -731,7 +731,7 @@ async def jmj_details_handler(message: types.Message, state: FSMContext):
     else:
         await message.answer("Iltimos, dugonangiz haqida kamida 10 ta belgidan iborat batafsil ma'lumot kiriting.")
 
-@dp.message(Form.FAMILY_HUSBAND_AGE)
+@dp.message(F.text, F.chat.type == "private", Form.FAMILY_HUSBAND_AGE)
 async def family_husband_age_handler(message: types.Message, state: FSMContext):
     age_input = message.text
     if age_input and age_input.isdigit() and 18 <= int(age_input) <= 70:
@@ -746,7 +746,7 @@ async def family_husband_age_handler(message: types.Message, state: FSMContext):
 async def family_husband_age_invalid_handler(message: types.Message):
     await message.answer("Yoshingizni faqat raqamlarda kiriting. Iltimos, qaytadan urinib ko'ring.")
 
-@dp.message(Form.FAMILY_WIFE_AGE)
+@dp.message(F.text, F.chat.type == "private", Form.FAMILY_WIFE_AGE)
 async def family_wife_age_handler(message: types.Message, state: FSMContext):
     age_input = message.text
     if age_input and age_input.isdigit() and 18 <= int(age_input) <= 60:
@@ -761,7 +761,7 @@ async def family_wife_age_handler(message: types.Message, state: FSMContext):
 async def family_wife_age_invalid_handler(message: types.Message):
     await message.answer("Yoshingizni faqat raqamlarda kiriting. Iltimos, qaytadan urinib ko'ring.")
 
-@dp.callback_query(F.data.startswith("author_"), Form.FAMILY_AUTHOR)
+@dp.callback_query(F.data.startswith("author_"), F.chat.type == "private", Form.FAMILY_AUTHOR)
 async def family_author_handler(callback: types.CallbackQuery, state: FSMContext):
     author = callback.data.split("_")[1]
     await state.update_data(author=author)
@@ -775,7 +775,7 @@ async def family_author_handler(callback: types.CallbackQuery, state: FSMContext
         await state.set_state(Form.FAMILY_WIFE_CHOICE)
     await callback.answer()
 
-@dp.callback_query(F.data.startswith("h_choice_"), Form.FAMILY_HUSBAND_CHOICE)
+@dp.callback_query(F.data.startswith("h_choice_"), F.chat.type == "private", Form.FAMILY_HUSBAND_CHOICE)
 async def family_husband_choice_handler(callback: types.CallbackQuery, state: FSMContext):
     h_choice = callback.data.split("_")[2]
     await state.update_data(h_choice=h_choice)
@@ -790,7 +790,7 @@ async def family_husband_choice_handler(callback: types.CallbackQuery, state: FS
         await state.set_state(Form.FAMILY_WIFE_AGREEMENT)
     await callback.answer()
 
-@dp.callback_query(F.data.startswith("wife_agree_"), Form.FAMILY_WIFE_AGREEMENT)
+@dp.callback_query(F.data.startswith("wife_agree_"), F.chat.type == "private", Form.FAMILY_WIFE_AGREEMENT)
 async def family_wife_agreement_handler(callback: types.CallbackQuery, state: FSMContext):
     wife_agreement = callback.data.split("_")[2]
     await state.update_data(wife_agreement=wife_agreement)
@@ -799,7 +799,7 @@ async def family_wife_agreement_handler(callback: types.CallbackQuery, state: FS
     await state.set_state(Form.ABOUT)
     await callback.answer()
 
-@dp.callback_query(F.data.startswith("w_choice_"), Form.FAMILY_WIFE_CHOICE)
+@dp.callback_query(F.data.startswith("w_choice_"), F.chat.type == "private", Form.FAMILY_WIFE_CHOICE)
 async def family_wife_choice_handler(callback: types.CallbackQuery, state: FSMContext):
     w_choice = callback.data.split("_")[2]
     await state.update_data(w_choice=w_choice)
@@ -813,7 +813,7 @@ async def family_wife_choice_handler(callback: types.CallbackQuery, state: FSMCo
         await state.set_state(Form.ABOUT)
     await callback.answer()
 
-@dp.callback_query(F.data.startswith("husband_agree_"), Form.FAMILY_HUSBAND_AGREEMENT)
+@dp.callback_query(F.data.startswith("husband_agree_"), F.chat.type == "private", Form.FAMILY_HUSBAND_AGREEMENT)
 async def family_husband_agreement_handler(callback: types.CallbackQuery, state: FSMContext):
     husband_agreement = callback.data.split("_")[2]
     await state.update_data(husband_agreement=husband_agreement)
@@ -822,7 +822,7 @@ async def family_husband_agreement_handler(callback: types.CallbackQuery, state:
     await state.set_state(Form.ABOUT)
     await callback.answer()
 
-@dp.message(Form.ABOUT)
+@dp.message(F.chat.type == "private", Form.ABOUT)
 async def about_handler(message: types.Message, state: FSMContext):
     about_text = message.text
     if about_text and len(about_text) >= 20:
@@ -956,7 +956,7 @@ async def admin_end_reply(message: types.Message, state: FSMContext):
     await message.answer("Suhbat rejimi tugatildi. Endi siz botning boshqa buyruqlaridan foydalanishingiz mumkin.")
     logging.info(f"Admin {message.from_user.id} ended reply mode for user {target_user_id}")
 
-@dp.message(Command("endchat"), F.chat.id.in_(chat_mode_users))
+@dp.message(Command("endchat"),F.chat.type == "private", F.chat.id.in_(chat_mode_users))
 async def user_end_chat(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
     if user_id in chat_mode_users:
