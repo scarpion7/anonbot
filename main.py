@@ -1049,6 +1049,9 @@ async def on_startup(app: web.Application) -> None:
     logging.info(f"Setting webhook to {WEBHOOK_URL}")
     await bot.set_webhook(WEBHOOK_URL)
     logging.info("Webhook successfully set!")
+# --- UptimeRobot uchun ping route ---
+async def handle_ping(request):
+    return web.Response(text="Bot ishlayapti!")
 
 async def on_shutdown(app: web.Application) -> None:
     logging.info("Deleting webhook...")
@@ -1102,7 +1105,9 @@ async def main() -> web.Application:
 
     # Webhook serverini sozlash
     app = web.Application()
-    
+    # UptimeRobot ping yo'lini qo'shish
+    app.router.add_get("/", handle_ping)
+
     # Aiohttp ilovasiga startup va shutdown funksiyalarini ro'yxatdan o'tkazish
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
