@@ -26,9 +26,9 @@ CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 WEB_SERVER_HOST = "0.0.0.0"
 WEB_SERVER_PORT = int(os.getenv("PORT", 8000))
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-if BOT_TOKEN.startswith('"') and BOT_TOKEN.endswith('"'):
-    BOT_TOKEN = BOT_TOKEN[1:-1]
+TOKEN = os.getenv("BOT_TOKEN")
+if TOKEN.startswith('"') and TOKEN.endswith('"'):
+    TOKEN = TOKEN[1:-1]
 
 # Bot va dispatcher obyektlarini yaratish
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN))
