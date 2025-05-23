@@ -885,7 +885,7 @@ async def main():
     )
     webhook_requests_handler.register(app, path=WEBHOOK_PATH)
     
-   async def health_check(request):
+ async def health_check(request):
         return web.Response(text="OK")
     
     app.add_routes([web.get('/', health_check)])
