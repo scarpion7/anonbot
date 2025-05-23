@@ -10,9 +10,9 @@ import re
 from aiogram.types import FSInputFile, URLInputFile
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler # Webhook uchun kerak emas
-from aiohttp import web # Webhook uchun kerak emas
-import asyncio  # Asinxron ishlash uchun
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_webhook
+from aiohttp import web
+import asyncio
 
 load_dotenv()
 
@@ -23,19 +23,14 @@ TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_USER_ID = int(os.getenv("ADMIN_USER_ID"))
 ADMIN_GROUP_ID = int(os.getenv("ADMIN_GROUP_ID"))
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
-WEBHOOK_URL = os.getenv("WEBHOOK_URL") # Long-pollingda kerak emas
-WEB_SERVER_HOST = "0.0.0.0" # Long-pollingda kerak emas
-WEB_SERVER_PORT = int(os.getenv("PORT", 8000)) # Long-pollingda kerak emas
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+WEB_SERVER_HOST = "0.0.0.0" # Render'da 0.0.0.0 bo'lishi kerak
+WEB_SERVER_PORT = int(os.getenv("PORT", 8000)) # Render PORT muhit o'zgaruvchisini beradi
 
 # Bot va dispatcher obyektlarini yaratish
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN))
 dp = Dispatcher()
 
-async def on_startup(dispatcher: Dispatcher, bot: Bot):
-    await bot.set_webhook(f"{WEBHOOK_URL}/webhook")
-
-async def on_shutdown(dispatcher: Dispatcher, bot: Bot):
-    await bot.delete_webhook()
 
 # Holatlar klassini aniqlash
 class Form(StatesGroup):
@@ -931,39 +926,33 @@ async def echo_for_chat_mode(message: types.Message):
         logging.info(f"Ignored message from user {message.from_user.id} not in chat mode.")
 
 
-async def main():
-    # Webhook sozlamalari
-    await bot.set_webhook(
-        url=f"{WEBHOOK_URL}/webhook",
-        drop_pending_updates=True
-    )
-    
-    # aiohttp server yaratish
-    app = web.Application()  # <-- Endi web moduli mavjud
-    webhook_requests_handler = SimpleRequestHandler(
-        dispatcher=dp,
-        bot=bot,
-    )
-    
-    # Webhook uchun route qo'shish
-    webhook_requests_handler.register(app, path="/webhook")
-    
-    # UptimeRobot uchun health check
-    async def health_check(request):
-        return web.Response(text="OK")
+# Render'ning health check va UptimeRobot uchun oddiy HTTP server
+async def health_check(request):
+    return web.Response(text="Bot is running")
 
-    app.add_routes([web.get("/", health_check)])
-    
-    # Serverni ishga tushirish
+async def main():
+    logging.info("Bot ishga tushirildi (Webhook mode)...")
+
+    # Webhook sozlamalarini o'rnatish
+    await bot.set_webhook(url=WEBHOOK_URL)
+
+    # Aiohttp ilovasini yaratish
+    app = web.Application()
+    app.router.add_get("/", health_check) # Health check endpoint
+    app.router.add_post(f"/{TOKEN}", SimpleRequestHandler(dispatcher=dp, bot=bot))
+
+    # Web serverni ishga tushirish
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
-    
+    site = web.TCPSite(runner, WEB_SERVER_HOST, WEB_SERVER_PORT)
     await site.start()
-    logging.info(f"Server started on {WEB_SERVER_HOST}:{WEB_SERVER_PORT}")
-    await asyncio.Event().wait()
+
+    logging.info(f"Web server {WEB_SERVER_HOST}:{WEB_SERVER_PORT} da ishga tushdi.")
+    logging.info(f"Webhook URL: {WEBHOOK_URL}/{TOKEN}")
+
+    # Cheksiz loop, webhookni ushlab turish uchun
+    while True:
+        await asyncio.sleep(3600) # Har soatda tekshirish (yoki boshqa interval)
 
 if __name__ == "__main__":
-    dp.startup.register(on_startup)
-    dp.shutdown.register(on_shutdown)
     asyncio.run(main())
