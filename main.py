@@ -918,11 +918,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logging.info("Bot to'xtatildi")
     except Exception as e:
-
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        logging.info("Bot to'xtatildi")
-    except Exception as e:
         logging.critical(f"Kritik xatolik: {e}")
