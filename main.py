@@ -10,7 +10,7 @@ import re
 from aiogram.types import FSInputFile, URLInputFile
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_webhook
+#from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_webhook
 from aiohttp import web
 import asyncio
 
