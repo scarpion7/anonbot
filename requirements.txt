@@ -1,4 +1,4 @@
-aiogram==3.10.0
+aiogram==3.x
 python-dotenv==1.0.0
-aiohttp==3.9.5
+aiohttp
 requests
