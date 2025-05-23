@@ -37,6 +37,9 @@ TOKEN = os.getenv("BOT_TOKEN")
 # Agar WEBHOOK_URL .env da bo'lmasa, xato beradi.
 WEBHOOK_URL = os.getenv("WEBHOOK_URL") + WEBHOOK_PATH
 
+if not WEBHOOK_URL:
+    logging.error("WEBHOOK_URL muhit o'zgaruvchisi topilmadi!")
+    exit(1)
 
 # Tokenni to'g'irlash (agar kotirovkalar bilan kelgan bo'lsa)
 if TOKEN and TOKEN.startswith('"') and TOKEN.endswith('"'):
@@ -48,7 +51,6 @@ elif not TOKEN:
 # Bot va dispatcher obyektlarini yaratish
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN))
 dp = Dispatcher()
-dp.update.middleware(ErrorMiddleware())
 
 # Holatlar klassini aniqlash
 class Form(StatesGroup):
@@ -70,7 +72,18 @@ class Form(StatesGroup):
     FAMILY_WIFE_CHOICE = State()
     FAMILY_HUSBAND_AGREEMENT = State()
     ABOUT = State()
+    
+class ErrorMiddleware(BaseMiddleware):
+    async def __call__(self, handler, event, data):
+        try:
+            return await handler(event, data)
+        except Exception as e:
+            logging.error(f"Xatolik yuz berdi: {e}", exc_info=True)
+            with suppress(Exception):
+                await bot.send_message(ADMIN_USER_ID, f"⚠️ Xatolik: {str(e)}")
+            raise
 
+dp.update.middleware(ErrorMiddleware())
 # New state for admin's reply context
 class AdminState(StatesGroup):
     REPLYING_TO_USER = State()
@@ -870,14 +883,12 @@ async def user_end_chat(message: types.Message, state: FSMContext):
 async def main():
     await bot.delete_webhook(drop_pending_updates=True)
     
-    # Webhookni sozlash
     await bot.set_webhook(
         url=WEBHOOK_URL + WEBHOOK_PATH,
         drop_pending_updates=True,
         allowed_updates=dp.resolve_used_update_types()
     )
     
-    # Aiohttp serverini sozlash
     app = web.Application()
     webhook_requests_handler = SimpleRequestHandler(
         dispatcher=dp,
@@ -885,7 +896,8 @@ async def main():
     )
     webhook_requests_handler.register(app, path=WEBHOOK_PATH)
     
- async def health_check(request):
+    # Health check endpointi
+    async def health_check(request):
         return web.Response(text="OK")
     
     app.add_routes([web.get('/', health_check)])
@@ -898,8 +910,14 @@ async def main():
     logging.info(f"Bot {WEB_SERVER_HOST}:{WEB_SERVER_PORT} da ishga tushdi")
     logging.info(f"Webhook manzili: {WEBHOOK_URL}{WEBHOOK_PATH}")
     
-    # Botni to'xtatish uchun kutish
     await asyncio.Event().wait()
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logging.info("Bot to'xtatildi")
+    except Exception as e:
 
 if __name__ == "__main__":
     try:
