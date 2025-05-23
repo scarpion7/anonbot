@@ -10,8 +10,8 @@ import re
 from aiogram.types import FSInputFile, URLInputFile
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-# from aiogram.webhook.aiohttp_server import SimpleRequestHandler # Webhook uchun kerak emas
-# from aiohttp import web # Webhook uchun kerak emas
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler # Webhook uchun kerak emas
+from aiohttp import web # Webhook uchun kerak emas
 import asyncio  # Asinxron ishlash uchun
 
 load_dotenv()
@@ -939,7 +939,7 @@ async def main():
     )
     
     # aiohttp server yaratish
-    app = web.Application()
+    app = web.Application()  # <-- Endi web moduli mavjud
     webhook_requests_handler = SimpleRequestHandler(
         dispatcher=dp,
         bot=bot,
@@ -959,12 +959,9 @@ async def main():
     await runner.setup()
     site = web.TCPSite(runner, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
     
-    try:
-        await site.start()
-        logging.info(f"Server started on {WEB_SERVER_HOST}:{WEB_SERVER_PORT}")
-        await asyncio.Event().wait()  # Server cheksiz ishlashi uchun
-    finally:
-        await runner.cleanup()
+    await site.start()
+    logging.info(f"Server started on {WEB_SERVER_HOST}:{WEB_SERVER_PORT}")
+    await asyncio.Event().wait()
 
 if __name__ == "__main__":
     dp.startup.register(on_startup)
