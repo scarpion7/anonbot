@@ -557,7 +557,7 @@ async def back_handler(callback: types.CallbackQuery, state: FSMContext):
         await callback.message.edit_text("Ayolning roziligi:", reply_markup=family_wife_agreement_keyboard())
         await state.set_state(Form.FAMILY_WIFE_AGREEMENT)
     elif target_state_name == "family_wife_choice":
-        await state.set_state(Form.FAMILY_WIFE_CHOICE)
+        await state.set_state(Form.FAMILY_WIFE_CHOICE)  # Typoni to'g'rilash
         await callback.message.edit_text("Tanlang:", reply_markup=family_wife_choice_keyboard())
     elif target_state_name == "family_husband_agreement":
         await callback.message.edit_text("Erkakning roziligi:", reply_markup=family_husband_agreement_keyboard())
@@ -921,30 +921,42 @@ async def on_shutdown(dispatcher: Dispatcher, bot: Bot):
     logging.info("Bot sessiyasi yopildi.")
 
 async def main():
-    dp.startup.register(lambda: on_startup(dp, bot, FULL_WEBHOOK_URL))
-    dp.shutdown.register(lambda: on_shutdown(dp, bot))
-
+    await bot.delete_webhook(drop_pending_updates=True)
+    
+    # Webhookni sozlash
+    await bot.set_webhook(
+        url=FULL_WEBHOOK_URL,
+        drop_pending_updates=True,
+        allowed_updates=dp.resolve_used_update_types()
+    )
+    
+    # Aiohttp serverini sozlash
     app = web.Application()
     webhook_requests_handler = SimpleRequestHandler(
         dispatcher=dp,
         bot=bot,
-        secret_token=TOKEN # Bu yerda bot tokenidan secret_token sifatida foydalanish tavsiya etiladi
     )
     webhook_requests_handler.register(app, path=WEBHOOK_PATH)
-
-    # Webhook URLini consola yozish
-    logging.info(f"Webhook URL: {FULL_WEBHOOK_URL}")
-    logging.info(f"Web server port: {WEB_SERVER_PORT}")
+    async def health_check(request):  # To'g'ri indentatsiya
+        return web.Response(text="OK")
     
-    # Render.com bepul versiyasi botni uxlab qolmasligi uchun HTTP serverni doimiy ishlashi kerak.
-    # UptimeRobot yuborgan so'rovlarga avtomatik javob qaytariladi.
-    web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
-
+    app.add_routes([web.get('/', health_check)])
+    
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
+    await site.start()
+    
+    logging.info(f"Bot {WEB_SERVER_HOST}:{WEB_SERVER_PORT} da ishga tushdi")
+    logging.info(f"Webhook manzili: {FULL_WEBHOOK_URL}")
+    
+    # Serverning abadiy ishlashi uchun
+    await asyncio.Event().wait()
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logging.info("Bot to'xtatildi (KeyboardInterrupt).")
+        logging.info("Bot to'xtatildi")
     except Exception as e:
-        logging.critical(f"Kutilmagan xato: {e}", exc_info=True)
+        logging.critical(f"Kritik xatolik: {e}", exc_info=True)
