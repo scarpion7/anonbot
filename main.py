@@ -4,7 +4,8 @@ import asyncio
 from dotenv import load_dotenv
 from contextlib import suppress
 from aiohttp import web
-
+from aiohttp import web
+import requests
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.middlewares.base import BaseMiddleware
 from aiogram.filters import Command
@@ -919,7 +920,15 @@ async def on_shutdown(dispatcher: Dispatcher, bot: Bot):
 
     await bot.session.close()
     logging.info("Bot sessiyasi yopildi.")
-
+async def keep_alive():
+    while True:
+        try:
+            response = requests.get("https://your-bot-name.onrender.com/")
+            logging.info(f"Keep-alive request: {response.status_code}")
+        except Exception as e:
+            logging.error(f"Keep-alive error: {e}")
+        await asyncio.sleep(300)
+        
 async def main():
     await bot.delete_webhook(drop_pending_updates=True)
     
@@ -952,6 +961,9 @@ async def main():
     
     # Serverning abadiy ishlashi uchun
     await asyncio.Event().wait()
+    
+    asyncio.create_task(keep_alive())
+    await web._run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
 
 if __name__ == "__main__":
     try:
