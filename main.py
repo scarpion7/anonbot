@@ -16,6 +16,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler # Faqat SimpleRequestHandler qoladi
 from aiohttp import web # aiohttp veb-serveri uchun
+from aiogram.middlewares.base import BaseMiddleware
 
 # .env faylini yuklash
 load_dotenv()
