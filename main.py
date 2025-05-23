@@ -23,8 +23,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 ADMIN_USER_ID = int(os.getenv("ADMIN_USER_ID"))
 ADMIN_GROUP_ID = int(os.getenv("ADMIN_GROUP_ID"))
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 WEBHOOK_PATH = '/webhook'
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")+WEBHOOK_PATH
 WEB_SERVER_HOST = "0.0.0.0"
 WEB_SERVER_PORT = int(os.getenv("PORT", 5000))
 TOKEN = os.getenv("BOT_TOKEN")
