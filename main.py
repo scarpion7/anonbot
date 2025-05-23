@@ -10,8 +10,9 @@ import re
 from aiogram.types import FSInputFile, URLInputFile
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-#from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_webhook
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler
 from aiohttp import web
+
 import asyncio
 
 load_dotenv()
@@ -23,9 +24,9 @@ TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_USER_ID = int(os.getenv("ADMIN_USER_ID"))
 ADMIN_GROUP_ID = int(os.getenv("ADMIN_GROUP_ID"))
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-WEB_SERVER_HOST = "0.0.0.0" # Render'da 0.0.0.0 bo'lishi kerak
-WEB_SERVER_PORT = int(os.getenv("PORT", 8000)) # Render PORT muhit o'zgaruvchisini beradi
+WEBHOOK_URL = os.getenv("WEBHOOK_URL") # Bu qatorni izohdan chiqaring
+WEB_SERVER_HOST = "0.0.0.0" # Bu qatorni izohdan chiqaring
+WEB_SERVER_PORT = int(os.getenv("PORT", 8000)) # Bu qatorni izohdan chiqaring
 
 # Bot va dispatcher obyektlarini yaratish
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN))
