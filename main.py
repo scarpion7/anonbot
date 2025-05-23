@@ -48,6 +48,7 @@ elif not TOKEN:
 # Bot va dispatcher obyektlarini yaratish
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN))
 dp = Dispatcher()
+dp.update.middleware(ErrorMiddleware())
 
 # Holatlar klassini aniqlash
 class Form(StatesGroup):
@@ -867,47 +868,43 @@ async def user_end_chat(message: types.Message, state: FSMContext):
 
 # Main funksiyasi (webhook rejimida ishga tushirish uchun)
 async def main():
-    # Eski webhookni o'chirib, yangisini o'rnatish
-    # Render.com kabi platformalarda bu avtomatik bajariladi, lekin aniqlik uchun qoldirish mumkin.
     await bot.delete_webhook(drop_pending_updates=True)
-    await bot.set_webhook(url=WEBHOOK_URL)
-    logging.info(f"Webhook set to: {WEBHOOK_URL}")
-
-
+    
+    # Webhookni sozlash
+    await bot.set_webhook(
+        url=WEBHOOK_URL + WEBHOOK_PATH,
+        drop_pending_updates=True,
+        allowed_updates=dp.resolve_used_update_types()
+    )
+    
+    # Aiohttp serverini sozlash
     app = web.Application()
-    # Webhook so'rovlarini qayta ishlovchi obyekt
     webhook_requests_handler = SimpleRequestHandler(
         dispatcher=dp,
         bot=bot,
-        handle_in_background=True, # Xabarlarni fonda qayta ishlash
     )
-
-    # Webhook handler'ni aiohttp ilovasiga ro'yxatdan o'tkazish
     webhook_requests_handler.register(app, path=WEBHOOK_PATH)
-
-    # Veb-serverni ishga tushirish
+    
+   async def health_check(request):
+        return web.Response(text="OK")
+    
+    app.add_routes([web.get('/', health_check)])
+    
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, WEB_SERVER_HOST, WEB_SERVER_PORT)
+    site = web.TCPSite(runner, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
     await site.start()
-
-    logging.info(f"Bot started in webhook mode on http://{WEB_SERVER_HOST}:{WEB_SERVER_PORT}{WEBHOOK_PATH}")
-
-    # Bu qism botni doimiy ravishda ishga tushirib turadi
-    # Agar webhook ishlashi uchun biron bir uzluksiz jarayon kerak bo'lsa
-    # yoki server yopilmasligi kerak bo'lsa, bu zarur.
-    # Webhook serveri ishga tushganda, u o'zi so'rovlarni kutadi.
-    # `await runner.cleanup()` esa serverni to'xtatish uchun kerak bo'ladi
-    # (masalan, dasturdan chiqishdan oldin).
-    # Bu yerda oddiygina cheksiz kutish qo'yilgan.
-    while True:
-        await asyncio.sleep(3600) # Har soatda botning ishlayotganini tekshirish yoki shunchaki kutish
-
+    
+    logging.info(f"Bot {WEB_SERVER_HOST}:{WEB_SERVER_PORT} da ishga tushdi")
+    logging.info(f"Webhook manzili: {WEBHOOK_URL}{WEBHOOK_PATH}")
+    
+    # Botni to'xtatish uchun kutish
+    await asyncio.Event().wait()
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logging.info("Bot stopped by KeyboardInterrupt.")
+        logging.info("Bot to'xtatildi")
     except Exception as e:
-        logging.critical(f"Bot encountered a critical error: {e}")
+        logging.critical(f"Kritik xatolik: {e}")
