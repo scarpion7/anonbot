@@ -1,6 +1,9 @@
-from dotenv import load_dotenv
-import os
+import asyncio
 import logging
+import os
+from contextlib import suppress
+
+from dotenv import load_dotenv # .env fayllarni yuklash uchun
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -11,25 +14,31 @@ from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
 from aiogram.types import FSInputFile, URLInputFile
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler
-from aiohttp import web
-import asyncio # aiohttpga kerak bo'ladi
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_webhook # Webhook uchun
+from aiohttp import web # aiohttp veb-serveri uchun
 
+# .env faylini yuklash
 load_dotenv()
 
 # Sozlamalar
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
+# Muhit o'zgaruvchilarini olish
 ADMIN_USER_ID = int(os.getenv("ADMIN_USER_ID"))
 ADMIN_GROUP_ID = int(os.getenv("ADMIN_GROUP_ID"))
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 WEBHOOK_PATH = '/webhook'
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")+WEBHOOK_PATH
-WEB_SERVER_HOST = "0.0.0.0"
-WEB_SERVER_PORT = int(os.getenv("PORT", 5000))
+WEBHOOK_URL = os.getenv("WEBHOOK_URL") + WEBHOOK_PATH # WEBHOOK_URL muhit o'zgaruvchisi + /webhook
+WEB_SERVER_HOST = "0.0.0.0" # Barcha interfeyslarga ulanish
+WEB_SERVER_PORT = int(os.getenv("PORT", 8080)) # Render tomonidan beriladigan PORTdan foydalanish, aks holda 8080
 TOKEN = os.getenv("BOT_TOKEN")
-if TOKEN.startswith('"') and TOKEN.endswith('"'):
+
+# Tokenni to'g'irlash (agar kotirovkalar bilan kelgan bo'lsa)
+if TOKEN and TOKEN.startswith('"') and TOKEN.endswith('"'):
     TOKEN = TOKEN[1:-1]
+elif not TOKEN:
+    logging.error("BOT_TOKEN muhit o'zgaruvchisi topilmadi!")
+    exit(1) # Token topilmasa dasturni to'xtatish
 
 # Bot va dispatcher obyektlarini yaratish
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN))
@@ -74,30 +83,30 @@ TUMANLAR = {
     "Buxoro": ["Buxoro shahar", "Buxoro tumani", "G‘ijduvon", "Jondor", "Kogon", "Qorako‘l", "Olot", "Peshku",
                "Romitan", "Shofirkon", "Vobkent"],
     "Farg'ona": ["Farg'ona shahar", "Farg'ona tumani", "Beshariq", "Bog‘dod", "Buvayda", "Dang‘ara", "Qo‘qon", "Quva",
-                 "Rishton", "Rishton tumani", "Toshloq", "Oltiariq", "Quvasoy shahar"],
+                  "Rishton", "Rishton tumani", "Toshloq", "Oltiariq", "Quvasoy shahar"],
     "Jizzax": ["Jizzax shahar", "Arnasoy", "Baxmal", "Dashtobod", "Forish", "G‘allaorol", "Zarbdor", "Zomin",
-               "Mirzacho‘l", "Paxtakor", "Sharof Rashidov"],
+                "Mirzacho‘l", "Paxtakor", "Sharof Rashidov"],
     "Qashqadaryo": ["Qarshi shahar", "Chiroqchi", "G‘uzor", "Dehqonobod", "Koson", "Kitob", "Mirishkor", "Muborak",
                     "Nishon", "Qarshi tumani", "Shahrisabz", "Yakkabog‘"],
     "Navoiy": ["Navoiy shahar", "Karmana", "Konimex", "Navbahor", "Nurota", "Tomdi", "Uchquduq", "Xatirchi"],
     "Namangan": ["Namangan shahar", "Chust", "Kosonsoy", "Mingbuloq", "Namangan tumani", "Pop", "To‘raqo‘rg‘on",
-                 "Uychi", "Yangiqo‘rg‘on"],
+                  "Uychi", "Yangiqo‘rg‘on"],
     "Samarqand": ["Samarqand shahar", "Bulung‘ur", "Jomboy", "Kattaqo‘rg‘on", "Narpay", "Nurobod", "Oqdaryo", "Payariq",
-                  "Pastdarg‘om", "Paxtachi", "Qo‘shrabot", "Samarqand tumani", "Toyloq"],
+                   "Pastdarg‘om", "Paxtachi", "Qo‘shrabot", "Samarqand tumani", "Toyloq"],
     "Sirdaryo": ["Guliston shahar", "Boyovut", "Guliston tumani", "Mirzaobod", "Oqoltin", "Sayxunobod", "Sardoba",
-                 "Sirdaryo tumani", "Xovos"],
+                  "Sirdaryo tumani", "Xovos"],
     "Surxondaryo": ["Termiz shahar", "Angor", "Boysun", "Denov", "Jarqo‘rg‘on", "Muzrabot", "Sariosiyo", "Sherobod",
-                    "Sho‘rchi", "Termiz tumani"],
+                     "Sho‘rchi", "Termiz tumani"],
     "Toshkent": ["Bekobod", "Bo‘ka", "Ohangaron", "Oqqo‘rg‘on", "Chinoz", "Qibray", "Quyichirchiq", "Toshkent tumani",
-                 "Yangiyo‘l", "Zangiota", "Bekobod shahar", "Ohangaron shahar", "Yangiyo‘l shahar"],
+                  "Yangiyo‘l", "Zangiota", "Bekobod shahar", "Ohangaron shahar", "Yangiyo‘l shahar"],
     "Toshkent shahar": ["Mirzo Ulug‘bek", "Mirobod", "Sergeli", "Olmazor", "Shayxontohur", "Chilonzor", "Yunusobod",
-                        "Uchtepa", "Yashnobod"],
+                         "Uchtepa", "Yashnobod"],
     "Xorazm": ["Urganch shahar", "Bog‘ot", "Gurlan", "Xiva shahar", "Qo‘shko‘pir", "Shovot", "Urganch tumani", "Xonqa",
                "Yangiariq"],
     "Qoraqalpog'iston Respublikasi": ["Nukus shahar", "Amudaryo", "Beruniy", "Bo‘zatov", "Kegayli", "Qonliko‘l",
-                                      "Qo‘ng‘irot",
-                                      "Qorao‘zak", "Shumanay", "Taxtako‘pir", "To‘rtko‘l", "Xo‘jayli",
-                                      "Chimboy", "Mo‘ynoq", "Ellikqal‘a"],
+                                        "Qo‘ng‘irot",
+                                        "Qorao‘zak", "Shumanay", "Taxtako‘pir", "To‘rtko‘l", "Xo‘jayli",
+                                        "Chimboy", "Mo‘ynoq", "Ellikqal‘a"],
 }
 
 # Ayollar uchun pozitsiyalar ro'yxati
@@ -259,7 +268,6 @@ async def send_application_to_destinations(data: dict, user: types.User):
     if user.username:
         admin_message_text += f"[@{user.username}](tg://user?id={user.id}) (ID: `{user.id}`)\n"
     else:
-        # Bu yerda o'zgartirish
         admin_message_text += f"[{truncated_full_name}](tg://user?id={user.id}) (ID: `{user.id}`)\n"
 
     admin_message_text += (
@@ -358,7 +366,7 @@ async def send_application_to_destinations(data: dict, user: types.User):
             channel_text += f"🎂 **Yosh:** {data['age']}\n"
         if data.get('choice'):
             choice_text = {'1': 'Erkak bilan', '2': '👥 MJM (2ta erkak)', '3': '👭 JMJ (Dugonam bor)'}.get(data['choice'],
-                                                                                                         'None1')
+                                                                                                        'None1')
             channel_text += f"🤝 **Tanlov:** {choice_text}\n"
         if data.get('pose'):
             channel_text += f"🤸 **Pozitsiya:** {data['pose']}\n"
@@ -421,9 +429,9 @@ async def send_application_to_destinations(data: dict, user: types.User):
 async def start_handler(message: types.Message, state: FSMContext):
     if message.from_user.id in chat_mode_users:
         await message.answer("Siz suhbat rejimidasiz. Suhbatni tugatish uchun /endchat buyrug'ini bosing. \n\n"
-                              "Agar suhbat tugasa admin sizga yoza olmaydi.\n\n"
-                              "Istasangiz suhbatni tugatishdan oldin siz bilan bog'lanish uchun\n\n"
-                              " raqam yoki username qoldiring ")
+                             "Agar suhbat tugasa admin sizga yoza olmaydi.\n\n"
+                             "Istasangiz suhbatni tugatishdan oldin siz bilan bog'lanish uchun\n\n"
+                             " raqam yoki username qoldiring ")
         return
 
     await state.clear()
@@ -461,9 +469,9 @@ async def about_bot_handler(callback: types.CallbackQuery):
 async def back_handler(callback: types.CallbackQuery, state: FSMContext):
     if callback.from_user.id in chat_mode_users:
         await callback.answer("Siz suhbat rejimidasiz. Suhbatni tugatish uchun /endchat buyrug'ini bosing. \n\n"
-                              "Agar suhbat tugasa admin sizga yoza olmaydi.\n\n"
-                              "Istasangiz suhbatni tugatishdan oldin siz bilan bog'lanish uchun\n\n"
-                              " raqam yoki username qoldiring ", show_alert=True)
+                             "Agar suhbat tugasa admin sizga yoza olmaydi.\n\n"
+                             "Istasangiz suhbatni tugatishdan oldin siz bilan bog'lanish uchun\n\n"
+                             " raqam yoki username qoldiring ", show_alert=True)
         return
 
     target_state_name = callback.data.split("_")[1]
@@ -613,8 +621,20 @@ async def viloyat_handler(callback: types.CallbackQuery, state: FSMContext):
     viloyat = callback.data.split("_")[1]
     await state.update_data(viloyat=viloyat)
     logging.info(f"User {callback.from_user.id} chose viloyat: {viloyat}")
-    await callback.message.edit_text("Tumaningizni tanlang:", reply_markup=tuman_keyboard(viloyat))
-    await state.set_state(Form.TUMAN)
+
+    # Tumanlar mavjudligini tekshirish
+    if viloyat in TUMANLAR and TUMANLAR[viloyat]:
+        await callback.message.edit_text("Tumaningizni tanlang:", reply_markup=tuman_keyboard(viloyat))
+        await state.set_state(Form.TUMAN)
+    else:
+        # Agar tumanlar bo'lmasa, tuman so'ramasdan keyingi bosqichga o'tish
+        data = await state.get_data()
+        if data.get('gender') == 'female':
+            await callback.message.edit_text("Yoshingizni tanlang:", reply_markup=age_female_keyboard())
+            await state.set_state(Form.AGE_FEMALE)
+        elif data.get('gender') == 'family':
+            await callback.message.edit_text("Erkakning yoshini kiriting (raqamlarda):", reply_markup=InlineKeyboardBuilder().row(types.InlineKeyboardButton(text="◀️ Orqaga", callback_data="back_viloyat"), types.InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel")).as_markup())
+            await state.set_state(Form.FAMILY_HUSBAND_AGE)
     await callback.answer()
 
 @dp.callback_query(F.data.startswith("tum_"), F.chat.type == "private", Form.TUMAN)
@@ -622,12 +642,13 @@ async def tuman_handler(callback: types.CallbackQuery, state: FSMContext):
     tuman = callback.data.split("_")[1]
     await state.update_data(tuman=tuman)
     logging.info(f"User {callback.from_user.id} chose tuman: {tuman}")
+
     data = await state.get_data()
     if data.get('gender') == 'female':
         await callback.message.edit_text("Yoshingizni tanlang:", reply_markup=age_female_keyboard())
         await state.set_state(Form.AGE_FEMALE)
     elif data.get('gender') == 'family':
-        await callback.message.edit_text("Erkakning yoshini kiriting:")
+        await callback.message.edit_text("Erkakning yoshini kiriting (raqamlarda):", reply_markup=InlineKeyboardBuilder().row(types.InlineKeyboardButton(text="◀️ Orqaga", callback_data="back_tuman"), types.InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel")).as_markup())
         await state.set_state(Form.FAMILY_HUSBAND_AGE)
     await callback.answer()
 
@@ -646,123 +667,93 @@ async def female_choice_handler(callback: types.CallbackQuery, state: FSMContext
     await state.update_data(choice=choice)
     logging.info(f"User {callback.from_user.id} chose female choice: {choice}")
 
-    if choice == "1":
-        await callback.message.edit_text("Iltimos, yotirgan pozalaringizdan birini tanlang:", reply_markup=poses_keyboard())
+    if choice == '1': # Erkak bilan
+        await callback.message.edit_text("Iltimos, pozitsiyalardan birini tanlang:", reply_markup=poses_keyboard())
         await state.set_state(Form.POSE_WOMAN)
-    elif choice == "2":
-        await callback.message.edit_text("MJM tajribangizni tanlang:",
-                                         reply_markup=mjm_experience_keyboard(is_female=True))
+    elif choice == '2': # MJM
+        await callback.message.edit_text("MJM tajribangizni tanlang:", reply_markup=mjm_experience_keyboard(is_female=True))
         await state.set_state(Form.MJM_EXPERIENCE_FEMALE)
-    elif choice == "3":
-        await callback.message.edit_text("Dugonangizning yoshini kiriting:")
+    elif choice == '3': # JMJ
+        await callback.message.edit_text("Dugonangizning yoshini kiriting (raqamlarda):", reply_markup=InlineKeyboardBuilder().row(types.InlineKeyboardButton(text="◀️ Orqaga", callback_data="back_female_choice"), types.InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel")).as_markup())
         await state.set_state(Form.JMJ_AGE)
     await callback.answer()
 
 @dp.callback_query(F.data.startswith("pose_"), F.chat.type == "private", Form.POSE_WOMAN)
 async def pose_woman_handler(callback: types.CallbackQuery, state: FSMContext):
+    # Callback data-dan pose indeksini olib, POSES_WOMAN ro'yxatidan nomini olish
     pose_index = int(callback.data.split("_")[1]) - 1
     if 0 <= pose_index < len(POSES_WOMAN):
         pose = POSES_WOMAN[pose_index]
         await state.update_data(pose=pose)
-        logging.info(f"User {callback.from_user.id} chose female pose: {pose}")
-        await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \nKo’rishish uchun sizda joy mavjudmi(batafsil yozing)??:\n\n")
+        logging.info(f"User {callback.from_user.id} chose pose: {pose}")
+        await callback.message.edit_text("O'zingiz haqingizda qo'shimcha ma'lumotlar, kutilayotgan natijalar yoki izohlar (300 belgidan oshmasin):", reply_markup=InlineKeyboardBuilder().row(types.InlineKeyboardButton(text="◀️ Orqaga", callback_data="back_female_choice"), types.InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel")).as_markup())
         await state.set_state(Form.ABOUT)
     else:
-        await callback.message.edit_text("Noto'g'ri pozitsiya tanlandi. Iltimos, qaytadan tanlang.",
-                                         reply_markup=poses_keyboard())
-    await callback.answer()
-
-@dp.callback_query(F.data.startswith("mjm_exp_family_"), F.chat.type == "private", Form.MJM_EXPERIENCE)
-async def mjm_experience_handler(callback: types.CallbackQuery, state: FSMContext):
-    try:
-        exp_index = int(callback.data.split("_")[-1])
-        if 0 <= exp_index < len(MJM_EXPERIENCE_OPTIONS):
-            original_option_text = MJM_EXPERIENCE_OPTIONS[exp_index]
-            await state.update_data(mjm_experience=original_option_text)
-            logging.info(f"User {callback.from_user.id} chose MJM experience (family): {original_option_text}")
-            await callback.message.edit_text("Ayolning roziligi:", reply_markup=family_wife_agreement_keyboard())
-            await state.set_state(Form.FAMILY_WIFE_AGREEMENT)
-        else:
-            await callback.message.edit_text("Noto'g'ri tanlov. Iltimos, qaytadan tanlang.",
-                                             reply_markup=mjm_experience_keyboard(is_female=False))
-    except ValueError:
-        await callback.message.edit_text("Noto'g'ri ma'lumot qabul qilindi. Iltimos, tugmalardan birini bosing.",
-                                         reply_markup=mjm_experience_keyboard(is_female=False))
+        await callback.message.edit_text("Noto'g'ri pozitsiya tanlandi. Iltimos, qayta urinib ko'ring.", reply_markup=poses_keyboard())
     await callback.answer()
 
 @dp.callback_query(F.data.startswith("mjm_exp_female_"), F.chat.type == "private", Form.MJM_EXPERIENCE_FEMALE)
 async def mjm_experience_female_handler(callback: types.CallbackQuery, state: FSMContext):
-    try:
-        exp_index = int(callback.data.split("_")[-1])
-        if 0 <= exp_index < len(MJM_EXPERIENCE_FEMALE_OPTIONS):
-            original_option_text = MJM_EXPERIENCE_FEMALE_OPTIONS[exp_index]
-            await state.update_data(mjm_experience_female=original_option_text)
-            logging.info(f"User {callback.from_user.id} chose MJM experience (female): {original_option_text}")
-            await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:\n\n")
-            await state.set_state(Form.ABOUT)
-        else:
-            await callback.message.edit_text("Noto'g'ri tanlov. Iltimos, qaytadan tanlang.",
-                                             reply_markup=mjm_experience_keyboard(is_female=True))
-    except ValueError:
-        await callback.message.edit_text("Noto'g'ri ma'lumot qabul qilindi. Iltimos, tugmalardan birini bosing.",
-                                         reply_markup=mjm_experience_keyboard(is_female=True))
+    exp_index = int(callback.data.split("_")[3])
+    experience = MJM_EXPERIENCE_FEMALE_OPTIONS[exp_index]
+    await state.update_data(mjm_experience_female=experience)
+    logging.info(f"User {callback.from_user.id} chose female MJM experience: {experience}")
+    await callback.message.edit_text("O'zingiz haqingizda qo'shimcha ma'lumotlar, kutilayotgan natijalar yoki izohlar (300 belgidan oshmasin):", reply_markup=InlineKeyboardBuilder().row(types.InlineKeyboardButton(text="◀️ Orqaga", callback_data="back_female_choice"), types.InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel")).as_markup())
+    await state.set_state(Form.ABOUT)
     await callback.answer()
 
 @dp.message(F.text, F.chat.type == "private", Form.JMJ_AGE)
-async def jmj_age_handler(message: types.Message, state: FSMContext):
-    age_input = message.text
-    if age_input and age_input.isdigit() and 18 <= int(age_input) <= 60:
-        await state.update_data(jmj_age=age_input)
-        logging.info(f"User {message.from_user.id} entered JMJ age: {age_input}")
-        await message.answer("Dugonangiz haqida qo'shimcha ma'lumot kiriting (masalan, bo'yi, vazni, qiziqishlari):")
-        await state.set_state(Form.JMJ_DETAILS)
-    else:
-        await message.answer("Iltimos, dugonangizning yoshini 18 yoshdan 60 yoshgacha bo'lgan raqamda kiriting.")
+async def jmj_age_input(message: types.Message, state: FSMContext):
+    if not message.text.isdigit():
+        await message.answer("Iltimos, yoshni raqamlarda kiriting.")
+        return
+    age = int(message.text)
+    if not (18 <= age <= 80): # Yosh diapazonini belgilash
+        await message.answer("Yoshingiz 18 dan 80 gacha bo'lishi kerak. Iltimos, to'g'ri yoshni kiriting.")
+        return
 
-@dp.message(F.text, Form.JMJ_AGE)
-async def jmj_age_invalid_handler(message: types.Message):
-    await message.answer("Yoshingizni faqat raqamlarda kiriting. Iltimos, qaytadan urinib ko'ring.")
+    await state.update_data(jmj_age=age)
+    logging.info(f"User {message.from_user.id} entered JMJ age: {age}")
+    await message.answer("Dugonangiz haqida qo'shimcha ma'lumot kiriting (300 belgidan oshmasin):", reply_markup=InlineKeyboardBuilder().row(types.InlineKeyboardButton(text="◀️ Orqaga", callback_data="back_female_choice"), types.InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel")).as_markup())
+    await state.set_state(Form.JMJ_DETAILS)
 
 @dp.message(F.text, F.chat.type == "private", Form.JMJ_DETAILS)
-async def jmj_details_handler(message: types.Message, state: FSMContext):
-    details = message.text
-    if details and len(details) >= 10:
-        await state.update_data(jmj_details=details)
-        logging.info(f"User {message.from_user.id} entered JMJ details.")
-        await message.answer("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \nKo’rishish uchun sizda joy mavjudmi(batafsil yozing)??:\n\n")
-        await state.set_state(Form.ABOUT)
-    else:
-        await message.answer("Iltimos, dugonangiz haqida kamida 10 ta belgidan iborat batafsil ma'lumot kiriting.")
+async def jmj_details_input(message: types.Message, state: FSMContext):
+    if len(message.text) > 300:
+        await message.answer("Ma'lumotlar 300 belgidan oshmasligi kerak. Iltimos, qisqartiring.")
+        return
+    await state.update_data(jmj_details=message.text)
+    logging.info(f"User {message.from_user.id} entered JMJ details.")
+    await message.answer("O'zingiz haqingizda qo'shimcha ma'lumotlar, kutilayotgan natijalar yoki izohlar (300 belgidan oshmasin):", reply_markup=InlineKeyboardBuilder().row(types.InlineKeyboardButton(text="◀️ Orqaga", callback_data="back_female_choice"), types.InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel")).as_markup())
+    await state.set_state(Form.ABOUT)
 
 @dp.message(F.text, F.chat.type == "private", Form.FAMILY_HUSBAND_AGE)
-async def family_husband_age_handler(message: types.Message, state: FSMContext):
-    age_input = message.text
-    if age_input and age_input.isdigit() and 18 <= int(age_input) <= 70:
-        await state.update_data(husband_age=age_input)
-        logging.info(f"User {message.from_user.id} entered husband age: {age_input}")
-        await message.answer("Ayolning yoshini kiriting:")
-        await state.set_state(Form.FAMILY_WIFE_AGE)
-    else:
-        await message.answer("Iltimos, erkakning yoshini 18 yoshdan 70 yoshgacha bo'lgan raqamda kiriting.")
-
-@dp.message(F.text, Form.FAMILY_HUSBAND_AGE)
-async def family_husband_age_invalid_handler(message: types.Message):
-    await message.answer("Yoshingizni faqat raqamlarda kiriting. Iltimos, qaytadan urinib ko'ring.")
+async def family_husband_age_input(message: types.Message, state: FSMContext):
+    if not message.text.isdigit():
+        await message.answer("Iltimos, yoshni raqamlarda kiriting.")
+        return
+    age = int(message.text)
+    if not (18 <= age <= 80): # Yosh diapazonini belgilash
+        await message.answer("Yoshingiz 18 dan 80 gacha bo'lishi kerak. Iltimos, to'g'ri yoshni kiriting.")
+        return
+    await state.update_data(husband_age=age)
+    logging.info(f"User {message.from_user.id} entered family husband age: {age}")
+    await message.answer("Ayolning yoshini kiriting (raqamlarda):", reply_markup=InlineKeyboardBuilder().row(types.InlineKeyboardButton(text="◀️ Orqaga", callback_data="back_family_husband_age"), types.InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel")).as_markup())
+    await state.set_state(Form.FAMILY_WIFE_AGE)
 
 @dp.message(F.text, F.chat.type == "private", Form.FAMILY_WIFE_AGE)
-async def family_wife_age_handler(message: types.Message, state: FSMContext):
-    age_input = message.text
-    if age_input and age_input.isdigit() and 18 <= int(age_input) <= 60:
-        await state.update_data(wife_age=age_input)
-        logging.info(f"User {message.from_user.id} entered wife age: {age_input}")
-        await message.answer("Kim yozmoqda:", reply_markup=family_author_keyboard())
-        await state.set_state(Form.FAMILY_AUTHOR)
-    else:
-        await message.answer("Iltimos, ayolning yoshini 18 yoshdan 60 yoshgacha bo'lgan raqamda kiriting.")
-
-@dp.message(F.text, Form.FAMILY_WIFE_AGE)
-async def family_wife_age_invalid_handler(message: types.Message):
-    await message.answer("Yoshingizni faqat raqamlarda kiriting. Iltimos, qaytadan urinib ko'ring.")
+async def family_wife_age_input(message: types.Message, state: FSMContext):
+    if not message.text.isdigit():
+        await message.answer("Iltimos, yoshni raqamlarda kiriting.")
+        return
+    age = int(message.text)
+    if not (18 <= age <= 80): # Yosh diapazonini belgilash
+        await message.answer("Yoshingiz 18 dan 80 gacha bo'lishi kerak. Iltimos, to'g'ri yoshni kiriting.")
+        return
+    await state.update_data(wife_age=age)
+    logging.info(f"User {message.from_user.id} entered family wife age: {age}")
+    await message.answer("Kim yozmoqda:", reply_markup=family_author_keyboard())
+    await state.set_state(Form.FAMILY_AUTHOR)
 
 @dp.callback_query(F.data.startswith("author_"), F.chat.type == "private", Form.FAMILY_AUTHOR)
 async def family_author_handler(callback: types.CallbackQuery, state: FSMContext):
@@ -782,23 +773,32 @@ async def family_author_handler(callback: types.CallbackQuery, state: FSMContext
 async def family_husband_choice_handler(callback: types.CallbackQuery, state: FSMContext):
     h_choice = callback.data.split("_")[2]
     await state.update_data(h_choice=h_choice)
-    logging.info(f"User {callback.from_user.id} chose husband choice: {h_choice}")
+    logging.info(f"User {callback.from_user.id} chose family husband choice: {h_choice}")
 
     if h_choice == "mjm":
-        await callback.message.edit_text("MJM tajribangizni tanlang:",
-                                         reply_markup=mjm_experience_keyboard(is_female=False))
+        await callback.message.edit_text("MJM tajribangizni tanlang:", reply_markup=mjm_experience_keyboard(is_female=False))
         await state.set_state(Form.MJM_EXPERIENCE)
     elif h_choice == "erkak":
-        await callback.message.edit_text("Ayolning roziligi:", reply_markup=family_wife_agreement_keyboard())
+        await callback.message.edit_text("Ayolning roziligi bormi:", reply_markup=family_wife_agreement_keyboard())
         await state.set_state(Form.FAMILY_WIFE_AGREEMENT)
+    await callback.answer()
+
+@dp.callback_query(F.data.startswith("mjm_exp_family_"), F.chat.type == "private", Form.MJM_EXPERIENCE)
+async def mjm_experience_family_handler(callback: types.CallbackQuery, state: FSMContext):
+    exp_index = int(callback.data.split("_")[3])
+    experience = MJM_EXPERIENCE_OPTIONS[exp_index]
+    await state.update_data(mjm_experience=experience)
+    logging.info(f"User {callback.from_user.id} chose family MJM experience: {experience}")
+    await callback.message.edit_text("Ayolning roziligi bormi:", reply_markup=family_wife_agreement_keyboard())
+    await state.set_state(Form.FAMILY_WIFE_AGREEMENT)
     await callback.answer()
 
 @dp.callback_query(F.data.startswith("wife_agree_"), F.chat.type == "private", Form.FAMILY_WIFE_AGREEMENT)
 async def family_wife_agreement_handler(callback: types.CallbackQuery, state: FSMContext):
-    wife_agreement = callback.data.split("_")[2]
-    await state.update_data(wife_agreement=wife_agreement)
-    logging.info(f"User {callback.from_user.id} chose wife agreement: {wife_agreement}")
-    await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:\n\n")
+    agreement = callback.data.split("_")[2]
+    await state.update_data(wife_agreement=agreement)
+    logging.info(f"User {callback.from_user.id} chose family wife agreement: {agreement}")
+    await callback.message.edit_text("O'zingiz haqingizda qo'shimcha ma'lumotlar, kutilayotgan natijalar yoki izohlar (300 belgidan oshmasin):", reply_markup=InlineKeyboardBuilder().row(types.InlineKeyboardButton(text="◀️ Orqaga", callback_data="back_family_husband_choice"), types.InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel")).as_markup())
     await state.set_state(Form.ABOUT)
     await callback.answer()
 
@@ -806,348 +806,235 @@ async def family_wife_agreement_handler(callback: types.CallbackQuery, state: FS
 async def family_wife_choice_handler(callback: types.CallbackQuery, state: FSMContext):
     w_choice = callback.data.split("_")[2]
     await state.update_data(w_choice=w_choice)
-    logging.info(f"User {callback.from_user.id} chose wife choice: {w_choice}")
+    logging.info(f"User {callback.from_user.id} chose family wife choice: {w_choice}")
 
     if w_choice == "mjm_husband":
-        await callback.message.edit_text("Erakning roziligi:", reply_markup=family_husband_agreement_keyboard())
+        await callback.message.edit_text("Erkakning roziligi bormi:", reply_markup=family_husband_agreement_keyboard())
         await state.set_state(Form.FAMILY_HUSBAND_AGREEMENT)
     elif w_choice in ["mjm_strangers", "erkak"]:
-        await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:\n\n")
+        await callback.message.edit_text("O'zingiz haqingizda qo'shimcha ma'lumotlar, kutilayotgan natijalar yoki izohlar (300 belgidan oshmasin):", reply_markup=InlineKeyboardBuilder().row(types.InlineKeyboardButton(text="◀️ Orqaga", callback_data="back_family_wife_choice"), types.InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel")).as_markup())
         await state.set_state(Form.ABOUT)
     await callback.answer()
 
 @dp.callback_query(F.data.startswith("husband_agree_"), F.chat.type == "private", Form.FAMILY_HUSBAND_AGREEMENT)
 async def family_husband_agreement_handler(callback: types.CallbackQuery, state: FSMContext):
-    husband_agreement = callback.data.split("_")[2]
-    await state.update_data(husband_agreement=husband_agreement)
-    logging.info(f"User {callback.from_user.id} chose husband agreement: {husband_agreement}")
-    await callback.message.edit_text("Bu uchrashuvdan nimalarni kutyapsiz va sizga nimalar yoqadi(hohlayapsiz) \n Ko’rishish uchun sizda joy mavjudmi(batafsil yozing)??:\n\n")
+    agreement = callback.data.split("_")[2]
+    await state.update_data(husband_agreement=agreement)
+    logging.info(f"User {callback.from_user.id} chose family husband agreement: {agreement}")
+    await callback.message.edit_text("O'zingiz haqingizda qo'shimcha ma'lumotlar, kutilayotgan natijalar yoki izohlar (300 belgidan oshmasin):", reply_markup=InlineKeyboardBuilder().row(types.InlineKeyboardButton(text="◀️ Orqaga", callback_data="back_family_wife_choice"), types.InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel")).as_markup())
     await state.set_state(Form.ABOUT)
     await callback.answer()
 
-@dp.message(F.chat.type == "private", Form.ABOUT)
-async def about_handler(message: types.Message, state: FSMContext):
-    about_text = message.text
-    if about_text and len(about_text) >= 20:
-        await state.update_data(about=about_text)
-        data = await state.get_data()
-        logging.info(f"User {message.from_user.id} submitted 'about' data. Final data: {data}")
+@dp.message(F.text, F.chat.type == "private", Form.ABOUT)
+async def about_input(message: types.Message, state: FSMContext):
+    if len(message.text) > 300:
+        await message.answer("Ma'lumotlar 300 belgidan oshmasligi kerak. Iltimos, qisqartiring.")
+        return
+    await state.update_data(about=message.text)
+    logging.info(f"User {message.from_user.id} entered about info.")
 
-        await send_application_to_destinations(data, message.from_user)
+    data = await state.get_data()
+    user = message.from_user
 
-        await message.answer("Arizangiz qabul qilindi. Tez orada siz bilan bog'lanamiz.")
-        await state.clear()
-    else:
-        await message.answer("Iltimos, kamida 20 ta belgidan iborat batafsil ma'lumot kiriting.")
+    await send_application_to_destinations(data, user)
+
+    await message.answer(
+        "Arizangiz qabul qilindi! Adminstratorlarimiz tez orada siz bilan bog'lanishadi.\n\n"
+        "Suhbat rejimiga o'tishni istaysizmi? Agar ha bo'lsa, siz va adminstratorlar o'rtasida shaxsiy suhbat boshlanadi.\n"
+        "Suhbat rejimiga o'tishni istasangiz `Suhbatni boshlash` tugmasini bosing aks holda \n\n"
+        "`Suhbatni tugatish` tugmasini bosib botni foydalanishdan to'xtatishingiz mumkin.\n"
+        "Aks holda, `/start` buyrug'ini bosing, agar yangi ariza yubormoqchi bo'lsangiz."
+        , reply_markup=InlineKeyboardBuilder().row(
+            types.InlineKeyboardButton(text="💬 Suhbatni boshlash", callback_data=f"start_chat_{user.id}"),
+            types.InlineKeyboardButton(text="❌ Suhbatni tugatish", callback_data=f"end_chat_{user.id}")
+        ).as_markup()
+    )
+    await state.clear() # Arizani yuborgandan keyin state'ni tozalash
+    logging.info(f"User {message.from_user.id} submitted application and state cleared.")
+
 
 @dp.callback_query(F.data.startswith("admin_initiate_reply_"))
 async def admin_initiate_reply(callback: types.CallbackQuery, state: FSMContext):
-    user_id_to_reply = int(callback.data.split("_")[3])
+    if callback.from_user.id not in [ADMIN_USER_ID, ADMIN_GROUP_ID]:
+        await callback.answer("Sizda bu amalga ruxsat yo'q.", show_alert=True)
+        return
 
+    user_id_to_reply = int(callback.data.split("_")[3])
     await state.set_state(AdminState.REPLYING_TO_USER)
     await state.update_data(target_user_id=user_id_to_reply)
 
-    chat_mode_users.add(user_id_to_reply)
-
-    await callback.message.answer(
-        f"Foydalanuvchi `{user_id_to_reply}` ga javob yozish rejimida. Xabaringizni yuboring. "
-        f"Suhbatni tugatish uchun /endreply buyrug'ini bosing.",
-        parse_mode="Markdown"
-    )
+    await callback.message.answer(f"Foydalanuvchi `{user_id_to_reply}` ga javob yozing. "
+                                  "Javobni yozib bo'lgach /sendreply buyrug'ini bosing. "
+                                  "Bekor qilish uchun /cancelreply buyrug'ini bosing.")
     await callback.answer()
     logging.info(f"Admin {callback.from_user.id} initiated reply to user {user_id_to_reply}")
 
-
-@dp.message(F.chat.id.in_([ADMIN_USER_ID, ADMIN_GROUP_ID]), AdminState.REPLYING_TO_USER)
-async def admin_reply_to_user(message: types.Message, state: FSMContext):
+@dp.message(Command("sendreply"), F.chat.id == ADMIN_USER_ID, AdminState.REPLYING_TO_USER)
+async def admin_send_reply(message: types.Message, state: FSMContext):
     data = await state.get_data()
-    target_user_id = data.get("target_user_id")
+    target_user_id = data.get('target_user_id')
+    reply_text = data.get('admin_reply_text')
+
+    if not reply_text:
+        await message.answer("Javob matni topilmadi. Avval javobingizni yozing.")
+        return
 
     if not target_user_id:
-        await message.answer("Javob beriladigan foydalanuvchi topilmadi. Qayta urinib ko'ring yoki /start bosing.")
-        await state.clear()
+        await message.answer("Qaysi foydalanuvchiga javob berish kerakligi aniqlanmagan. Iltimos, qayta urinib ko'ring.")
         return
 
     try:
-        if message.text:
-            try:
-                await bot.send_message(target_user_id, message.text, parse_mode="Markdown")
-                logging.info(f"Admin {message.from_user.id} replied text message to user {target_user_id}")
-            except TelegramForbiddenError:
-                await message.answer("❌ Foydalanuvchi botni bloklagan. Xabar yuborilmadi.")
-                logging.warning(f"User {target_user_id} has blocked the bot.")
-                return
+        await bot.send_message(
+            chat_id=target_user_id,
+            text=f"**Administrator javobi:**\n\n{reply_text}",
+            parse_mode="Markdown"
+        )
+        await message.answer(f"Javob foydalanuvchi `{target_user_id}` ga yuborildi.")
+        logging.info(f"Admin {message.from_user.id} sent reply to user {target_user_id}")
 
-        elif message.photo:
-            try:
-                await bot.send_photo(target_user_id, message.photo[-1].file_id, caption=message.caption, parse_mode="Markdown")
-                logging.info(f"Admin {message.from_user.id} replied photo message to user {target_user_id}")
-            except TelegramForbiddenError:
-                await message.answer("❌ Foydalanuvchi botni bloklagan. Rasm yuborilmadi.")
-                return
+        # Foydalanuvchini chat rejimiga qo'shish
+        chat_mode_users.add(target_user_id)
+        await bot.send_message(target_user_id,
+                               "Siz suhbat rejimiga o'tkazildingiz. Endi administrator sizga xabarlar yuborishi mumkin. "
+                               "Suhbatni tugatish uchun /endchat buyrug'ini bosing.")
 
-        elif message.video:
-            try:
-                await bot.send_video(target_user_id, message.video.file_id, caption=message.caption, parse_mode="Markdown")
-                logging.info(f"Admin {message.from_user.id} replied video message to user {target_user_id}")
-            except TelegramForbiddenError:
-                await message.answer("❌ Foydalanuvchi botni bloklagan. Video yuborilmadi.")
-                return
-
-        elif message.animation:
-            try:
-                await bot.send_animation(target_user_id, message.animation.file_id, caption=message.caption, parse_mode="Markdown")
-                logging.info(f"Admin {message.from_user.id} replied animation (GIF) to user {target_user_id}")
-            except TelegramForbiddenError:
-                await message.answer("❌ Foydalanuvchi botni bloklagan. GIF yuborilmadi.")
-                return
-
-        elif message.sticker:
-            try:
-                await bot.send_sticker(target_user_id, message.sticker.file_id)
-                logging.info(f"Admin {message.from_user.id} replied sticker to user {target_user_id}")
-            except TelegramForbiddenError:
-                await message.answer("❌ Foydalanuvchi botni bloklagan. Sticker yuborilmadi.")
-                return
-
-        elif message.document:
-            try:
-                await bot.send_document(target_user_id, message.document.file_id, caption=message.caption, parse_mode="Markdown")
-                logging.info(f"Admin {message.from_user.id} replied document to user {target_user_id}")
-            except TelegramForbiddenError:
-                await message.answer("❌ Foydalanuvchi botni bloklagan. Hujjat yuborilmadi.")
-                return
-
-        elif message.audio:
-            try:
-                await bot.send_audio(target_user_id, message.audio.file_id, caption=message.caption, parse_mode="Markdown")
-                logging.info(f"Admin {message.from_user.id} replied audio to user {target_user_id}")
-            except TelegramForbiddenError:
-                await message.answer("❌ Foydalanuvchi botni bloklagan. Audio yuborilmadi.")
-                return
-
-        elif message.voice:
-            try:
-                await bot.send_voice(target_user_id, message.voice.file_id, caption=message.caption, parse_mode="Markdown")
-                logging.info(f"Admin {message.from_user.id} replied voice to user {target_user_id}")
-            except TelegramForbiddenError:
-                await message.answer("❌ Foydalanuvchi botni bloklagan. Ovoz yuborilmadi.")
-                return
-
-        else:
-            await message.answer("Kechirasiz, bu turdagi xabarni hozircha yubora olmayman.")
-            logging.warning(f"Admin {message.from_user.id} tried to reply with unsupported message type to user {target_user_id}")
-            return
-
-        await message.answer("✅ Xabar foydalanuvchiga yuborildi.")
-
+    except TelegramForbiddenError:
+        await message.answer(f"Xatolik: Foydalanuvchi `{target_user_id}` botni bloklagan.")
+        logging.warning(f"Failed to send reply to user {target_user_id}: Bot blocked by user.")
     except Exception as e:
-        logging.error(f"❌ Umumiy xatolik: Error replying to user {target_user_id} from admin {message.from_user.id}: {e}")
-        await message.answer(f"⚠️ Xabar yuborishda kutilmagan xatolik yuz berdi: {e}")
+        await message.answer(f"Javobni yuborishda xatolik yuz berdi: {e}")
+        logging.error(f"Failed to send reply to user {target_user_id}: {e}")
+    finally:
+        await state.clear() # Javob yuborilgandan keyin state'ni tozalash
+        logging.info(f"Admin reply state cleared for {message.from_user.id}")
 
+@dp.message(F.text, F.chat.id == ADMIN_USER_ID, AdminState.REPLYING_TO_USER)
+async def admin_collect_reply_text(message: types.Message, state: FSMContext):
+    await state.update_data(admin_reply_text=message.text)
+    await message.answer("Javob matni saqlandi. Yuborish uchun /sendreply buyrug'ini bosing.")
 
-@dp.message(Command("endreply"), F.chat.id.in_([ADMIN_USER_ID, ADMIN_GROUP_ID]), AdminState.REPLYING_TO_USER)
-async def admin_end_reply(message: types.Message, state: FSMContext):
-    data = await state.get_data()
-    target_user_id = data.get("target_user_id")
-
-    if target_user_id:
-        chat_mode_users.discard(target_user_id)
-        logging.info(f"User {target_user_id} removed from chat_mode_users.")
-
+@dp.message(Command("cancelreply"), F.chat.id == ADMIN_USER_ID, AdminState.REPLYING_TO_USER)
+async def admin_cancel_reply(message: types.Message, state: FSMContext):
     await state.clear()
-    await message.answer("Suhbat rejimi tugatildi. Endi siz botning boshqa buyruqlaridan foydalanishingiz mumkin.")
-    logging.info(f"Admin {message.from_user.id} ended reply mode for user {target_user_id}")
+    await message.answer("Javob yozish bekor qilindi.")
+    logging.info(f"Admin {message.from_user.id} cancelled reply.")
 
-@dp.message(Command("endchat"),F.chat.type == "private", F.chat.id.in_(chat_mode_users))
-async def user_end_chat(message: types.Message, state: FSMContext):
+@dp.callback_query(F.data.startswith("start_chat_"))
+async def start_chat_mode(callback: types.CallbackQuery, state: FSMContext):
+    user_id = int(callback.data.split("_")[2])
+    if callback.from_user.id == user_id: # Foydalanuvchi o'zini chat rejimiga qo'shishi
+        chat_mode_users.add(user_id)
+        await callback.message.edit_text("Suhbat rejimi yoqildi. Endi administrator sizga xabarlar yuborishi mumkin. "
+                                       "Suhbatni tugatish uchun /endchat buyrug'ini bosing.")
+        await callback.answer("Suhbat rejimi yoqildi.")
+        logging.info(f"User {user_id} enabled chat mode.")
+    else:
+        await callback.answer("Siz bu funksiyani o'zingiz uchun ishlata olmaysiz.", show_alert=True)
+
+@dp.callback_query(F.data.startswith("end_chat_"))
+async def end_chat_mode(callback: types.CallbackQuery, state: FSMContext):
+    user_id = int(callback.data.split("_")[2])
+    if callback.from_user.id == user_id: # Foydalanuvchi o'zining chat rejimini o'chirishi
+        if user_id in chat_mode_users:
+            chat_mode_users.remove(user_id)
+            await callback.message.edit_text("Suhbat rejimi tugatildi. Adminstrator sizga endi xabar yubora olmaydi. "
+                                           "Yangi ariza yuborish uchun /start buyrug'ini bosing.")
+            await callback.answer("Suhbat rejimi tugatildi.")
+            logging.info(f"User {user_id} disabled chat mode.")
+        else:
+            await callback.answer("Suhbat rejimi allaqachon o'chiq.", show_alert=True)
+    else:
+        await callback.answer("Siz bu funksiyani o'zingiz uchun ishlata olmaysiz.", show_alert=True)
+
+@dp.message(Command("endchat"), F.chat.type == "private")
+async def cmd_endchat(message: types.Message):
     user_id = message.from_user.id
     if user_id in chat_mode_users:
-        chat_mode_users.discard(user_id)
-        logging.info(f"User {user_id} ended chat mode.")
-        await message.answer("Suhbat rejimi tugatildi. Adminlar sizga xabar yubora olmaydi. Agar qayta boshlamoqchi bo'lsangiz /start buyrug'ini bosing.")
+        chat_mode_users.remove(user_id)
+        await message.answer("Suhbat rejimi tugatildi. Adminstrator sizga endi xabar yubora olmaydi. "
+                             "Yangi ariza yuborish uchun /start buyrug'ini bosing.")
+        logging.info(f"User {user_id} disabled chat mode via /endchat.")
     else:
-        await message.answer("Siz suhbat rejimida emassiz. /start buyrug'ini bosing.")
+        await message.answer("Siz suhbat rejimida emassiz.")
 
-@dp.message(F.chat.id != ADMIN_USER_ID, F.chat.id != ADMIN_GROUP_ID, F.chat.id.in_(chat_mode_users))
-async def forward_user_message_to_admins_and_group(message: types.Message):
-    user = message.from_user
-    user_info = f"👤 Foydalanuvchidan ({user.full_name} | ID: `{user.id}` {'@' + user.username if user.username else ''})"
 
-    builder = InlineKeyboardBuilder()
-    builder.button(text="✉️ Javob yozish", callback_data=f"admin_initiate_reply_{user.id}")
-    reply_markup = builder.as_markup()
+@dp.message(F.text, F.chat.id == ADMIN_USER_ID, ~F.text.startswith('/'), AdminState.REPLYING_TO_USER.is_set())
+async def handle_admin_reply_text(message: types.Message, state: FSMContext):
+    # This handler specifically captures text input when admin is in REPLYING_TO_USER state
+    # and the message is not a command.
+    await state.update_data(admin_reply_text=message.text)
+    await message.answer("Javob matni saqlandi. Yuborish uchun /sendreply buyrug'ini bosing.")
 
-    try:
-        if message.text:
-            text_to_send = f"{user_info}\n\n*Matnli xabar:*\n{message.text}"
-            await bot.send_message(ADMIN_USER_ID, text_to_send, reply_markup=reply_markup, parse_mode="Markdown")
-            await bot.send_message(ADMIN_GROUP_ID, text_to_send, reply_markup=reply_markup, parse_mode="Markdown")
-            logging.info(f"Forwarded text message from user {user.id}")
-        elif message.photo:
-            caption_text = f"{user_info}\n\n*Rasm xabar:*\n{message.caption if message.caption else ''}"
-            await bot.send_photo(ADMIN_USER_ID, message.photo[-1].file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
-            await bot.send_photo(ADMIN_GROUP_ID, message.photo[-1].file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
-            logging.info(f"Forwarded photo message from user {user.id}")
-        elif message.video:
-            caption_text = f"{user_info}\n\n*Video xabar:*\n{message.caption if message.caption else ''}"
-            await bot.send_video(ADMIN_USER_ID, message.video.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
-            await bot.send_video(ADMIN_GROUP_ID, message.video.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
-            logging.info(f"Forwarded video message from user {user.id}")
-        elif message.animation:
-            caption_text = f"{user_info}\n\n*GIF xabar:*\n{message.caption if message.caption else ''}"
-            await bot.send_animation(ADMIN_USER_ID, message.animation.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
-            await bot.send_animation(ADMIN_GROUP_ID, message.animation.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
-            logging.info(f"Forwarded animation (GIF) message from user {user.id}")
-        elif message.sticker:
-            text_to_send = f"{user_info}\n\n*Stiker xabar:*"
-            await bot.send_sticker(ADMIN_USER_ID, message.sticker.file_id, reply_markup=reply_markup)
-            await bot.send_message(ADMIN_USER_ID, text_to_send, parse_mode="Markdown")
-            await bot.send_sticker(ADMIN_GROUP_ID, message.sticker.file_id, reply_markup=reply_markup)
-            await bot.send_message(ADMIN_GROUP_ID, text_to_send, parse_mode="Markdown")
-            logging.info(f"Forwarded sticker message from user {user.id}")
-        elif message.document:
-            caption_text = f"{user_info}\n\n*Hujjat xabar:*\n{message.caption if message.caption else ''}"
-            await bot.send_document(ADMIN_USER_ID, message.document.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
-            await bot.send_document(ADMIN_GROUP_ID, message.document.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
-            logging.info(f"Forwarded document message from user {user.id}")
-        elif message.audio:
-            caption_text = f"{user_info}\n\n*Audio xabar:*\n{message.caption if message.caption else ''}"
-            await bot.send_audio(ADMIN_USER_ID, message.audio.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
-            await bot.send_audio(ADMIN_GROUP_ID, message.audio.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
-            logging.info(f"Forwarded audio message from user {user.id}")
-        elif message.voice:
-            caption_text = f"{user_info}\n\n*Ovozli xabar:*"
-            await bot.send_voice(ADMIN_USER_ID, message.voice.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
-            await bot.send_voice(ADMIN_GROUP_ID, message.voice.file_id, caption=caption_text, reply_markup=reply_markup, parse_mode="Markdown")
-            logging.info(f"Forwarded voice message from user {user.id}")
-        else:
-            warning_text = f"⚠️ {user_info}\n\n*Noma'lum turdagi xabar!*"
-            await bot.send_message(ADMIN_USER_ID, warning_text, reply_markup=reply_markup, parse_mode="Markdown")
-            await bot.send_message(ADMIN_GROUP_ID, warning_text, reply_markup=reply_markup, parse_mode="Markdown")
-            logging.warning(f"Forwarded an unknown message type from user {user.id}")
-
-    except Exception as e:
-        logging.error(f"Error forwarding message from user {user.id}: {e}")
-        error_message_for_admin = (
-            f"❌ Xatolik: Foydalanuvchi [{user.full_name}](tg://user?id={user.id}) (ID: `{user.id}`)\n"
-            f"yuborgan xabarni forward qilishda xato yuz berdi: `{e}`"
-        )
+@dp.message() # Umumiy xabar handlerlari, boshqa holatlarda ham ishlashi mumkin
+async def handle_all_other_messages(message: types.Message):
+    # Agar foydalanuvchi suhbat rejimida bo'lsa va xabar admin tomonidan kelgan bo'lsa
+    if message.from_user.id == ADMIN_USER_ID and message.chat.id in chat_mode_users:
+        target_user_id = message.chat.id # Bu yerda foydalanuvchi IDsi bo'lishi kerak
         try:
-            await bot.send_message(ADMIN_USER_ID, error_message_for_admin, parse_mode="Markdown")
-        except Exception as e_admin:
-            logging.error(f"Failed to send error notification to admin user: {e_admin}")
+            await bot.send_message(
+                chat_id=target_user_id,
+                text=f"**Administrator:**\n\n{message.text}",
+                parse_mode="Markdown"
+            )
+            logging.info(f"Admin {message.from_user.id} sent direct message to user {target_user_id}")
+        except TelegramForbiddenError:
+            logging.warning(f"Failed to send direct message to user {target_user_id}: Bot blocked by user.")
+        except Exception as e:
+            logging.error(f"Failed to send direct message to user {target_user_id}: {e}")
+    # Agar foydalanuvchi chat rejimida bo'lsa va xabar foydalanuvchidan kelgan bo'lsa (admin emas)
+    elif message.from_user.id in chat_mode_users and message.from_user.id != ADMIN_USER_ID:
+        try:
+            await bot.send_message(
+                chat_id=ADMIN_USER_ID,
+                text=f"**Foydalanuvchi (@{message.from_user.username or message.from_user.full_name}, ID: `{message.from_user.id}`) dan yangi xabar:**\n\n{message.text}",
+                parse_mode="Markdown",
+                reply_markup=InlineKeyboardBuilder().button(text="✉️ Javob yozish", callback_data=f"admin_initiate_reply_{message.from_user.id}").as_markup()
+            )
+            await message.answer("Sizning xabaringiz administratorga yuborildi.")
+            logging.info(f"User {message.from_user.id} sent message to admin.")
+        except Exception as e:
+            logging.error(f"Failed to forward message from user {message.from_user.id} to admin: {e}")
+            await message.answer("Xabarni administratorga yuborishda xatolik yuz berdi.")
+    else:
+        # Boshqa holatlardagi xabarlarni qayta ishlash (masalan, start bosilmagan bo'lsa)
+        if message.chat.type == "private":
+            await message.answer("Tushunmadim. Yangidan boshlash uchun /start buyrug'ini bosing.")
 
-@dp.message(F.chat.id != ADMIN_USER_ID, F.chat.id != ADMIN_GROUP_ID, ~F.chat.id.in_(chat_mode_users))
-async def handle_unregistered_messages(message: types.Message):
-    await message.answer(
-        "Iltimos, bot funksiyalaridan foydalanish uchun /start buyrug'ini bosing. "
-        "Agar suhbatni davom ettirmoqchi bo'lsangiz, avval /endchat buyrug'ini bosing."
-    )
-    logging.info(f"Unhandled message from user {message.from_user.id}: {message.text}")
 
-async def on_startup(app: web.Application) -> None:
-    logging.info(f"Setting webhook to {WEBHOOK_URL}")
-    await bot.set_webhook(WEBHOOK_URL)
-    logging.info("Webhook successfully set!")
-# --- UptimeRobot uchun ping route ---
-async def handle_ping(request):
-    return web.Response(text="Bot ishlayapti!")
+# --- Webhook va serverni ishga tushirish qismi ---
+async def start_webhook():
+    logging.info("Webhook serverini ishga tushirish...")
 
-async def on_shutdown(app: web.Application) -> None:
-    logging.info("Deleting webhook...")
-    await bot.delete_webhook()
-    logging.info("Webhook deleted!")
-    await bot.session.close() # Bot sessiyasini yopish
+    # Bot va Dispatcher obyektlari yuqorida aniqlangan, shuning uchun qayta yaratish shart emas.
 
-async def main() -> web.Application:
-    # Aiogram 3.x uchun message handlerlarni ro'yxatdan o'tkazish
-    dp.message.register(start_handler, Command("start"))
-
-    # Callback query handlerlar
-    dp.callback_query.register(cancel_handler, F.data == "cancel")
-    dp.callback_query.register(about_bot_handler, F.data == "about_bot")
-    dp.callback_query.register(back_handler, F.data.startswith("back_"))
-    dp.callback_query.register(gender_handler, F.data.startswith("gender_"), Form.CHOOSE_GENDER)
-    dp.callback_query.register(viloyat_handler, F.data.startswith("vil_"), Form.VILOYAT)
-    dp.callback_query.register(tuman_handler, F.data.startswith("tum_"), Form.TUMAN)
-    dp.callback_query.register(age_female_handler, F.data.startswith("age_"), Form.AGE_FEMALE)
-    dp.callback_query.register(female_choice_handler, F.data.startswith("choice_"), Form.FEMALE_CHOICE)
-    dp.callback_query.register(pose_woman_handler, F.data.startswith("pose_"), Form.POSE_WOMAN)
-    dp.callback_query.register(mjm_experience_handler, F.data.startswith("mjm_exp_family_"), Form.MJM_EXPERIENCE)
-    dp.callback_query.register(mjm_experience_female_handler, F.data.startswith("mjm_exp_female_"), Form.MJM_EXPERIENCE_FEMALE)
-    dp.callback_query.register(family_author_handler, F.data.startswith("author_"), Form.FAMILY_AUTHOR)
-    dp.callback_query.register(family_husband_choice_handler, F.data.startswith("h_choice_"), Form.FAMILY_HUSBAND_CHOICE)
-    dp.callback_query.register(family_wife_agreement_handler, F.data.startswith("wife_agree_"), Form.FAMILY_WIFE_AGREEMENT)
-    dp.callback_query.register(family_wife_choice_handler, F.data.startswith("w_choice_"), Form.FAMILY_WIFE_CHOICE)
-    dp.callback_query.register(family_husband_agreement_handler, F.data.startswith("husband_agree_"), Form.FAMILY_HUSBAND_AGREEMENT)
-
-    # Message handlerlar (statega bog'liq)
-    dp.message.register(jmj_age_handler, Form.JMJ_AGE)
-    dp.message.register(jmj_age_invalid_handler, F.text, Form.JMJ_AGE)
-    dp.message.register(jmj_details_handler, Form.JMJ_DETAILS)
-    dp.message.register(family_husband_age_handler, Form.FAMILY_HUSBAND_AGE)
-    dp.message.register(family_husband_age_invalid_handler, F.text, Form.FAMILY_HUSBAND_AGE)
-    dp.message.register(family_wife_age_handler, Form.FAMILY_WIFE_AGE)
-    dp.message.register(family_wife_age_invalid_handler, F.text, Form.FAMILY_WIFE_AGE)
-    dp.message.register(about_handler, Form.ABOUT)
-
-    # Admin va user suhbatini boshqarish handlerlari
-    dp.callback_query.register(admin_initiate_reply, F.data.startswith("admin_initiate_reply_"))
-    dp.message.register(admin_reply_to_user, F.chat.id.in_([ADMIN_USER_ID, ADMIN_GROUP_ID]), AdminState.REPLYING_TO_USER)
-    dp.message.register(admin_end_reply, Command("endreply"), F.chat.id.in_([ADMIN_USER_ID, ADMIN_GROUP_ID]), AdminState.REPLYING_TO_USER)
-    dp.message.register(user_end_chat, Command("endchat"), F.chat.id.in_(chat_mode_users))
-    
-    # Suhbat rejimida bo'lgan userlardan kelgan xabarlarni admin chatlariga forward qilish
-    dp.message.register(forward_user_message_to_admins_and_group, F.chat.id != ADMIN_USER_ID, F.chat.id != ADMIN_GROUP_ID, F.chat.id.in_(chat_mode_users))
-    
-    # Boshqa message handlerlaridan keyin turishi kerak
-    dp.message.register(handle_unregistered_messages)
-
-    # Webhook serverini sozlash
+    # Aiohttp veb ilovasini yaratish
     app = web.Application()
-    # UptimeRobot ping yo'lini qo'shish
-    app.router.add_get("/", handle_ping)
 
-    # Aiohttp ilovasiga startup va shutdown funksiyalarini ro'yxatdan o'tkazish
-    app.on_startup.append(on_startup)
-    app.on_shutdown.append(on_shutdown)
-
+    # Webhook request handler'ni dispatcher bilan ro'yxatdan o'tkazish
+    # Bu /webhook yo'liga kelgan har qanday POST so'rovini Aiogram dispatcheriga yo'naltiradi
     webhook_requests_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
-    webhook_requests_handler.register(app, "/webhook")
-    
-    return app
+    webhook_requests_handler.register(app, path=WEBHOOK_PATH)
+
+    # Webhook URLni Telegramga o'rnatish
+    # delete_webhook - eski webhooklarni o'chirish, drop_pending_updates - kutilayotgan yangilanishlarni tashlab yuborish
+    await bot.delete_webhook(drop_pending_updates=True)
+    await bot.set_webhook(url=WEBHOOK_URL, drop_pending_updates=True)
+    logging.info(f"Telegramga webhook o'rnatildi: {WEBHOOK_URL}")
+
+    # Web serverni ishga tushirish
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, WEB_SERVER_HOST, WEB_SERVER_PORT)
+    await site.start()
+
+    logging.info(f"Web server {WEB_SERVER_HOST}:{WEB_SERVER_PORT} da ishga tushdi.")
+    logging.info("Bot webhook orqali ishga tushirildi. Yangilanishlarni kutmoqda...")
+
+    # Bu loop Render'da botni doimiy ishlashda ushlab turadi.
+    # UptimeRobot pinglari botni 'uyg'oq' tutadi.
+    while True:
+        await asyncio.sleep(3600) # Bir soat kutish
 
 if __name__ == "__main__":
-    logging.info("Bot starting in webhook mode...")
-    # main funksiyasi endi aiohttp.web.Application qaytaradi
-    # web.run_app() ni bevosita chaqirish o'rniga, Render o'zi ilovani ishga tushiradi
-    # Agar Render bevosita faylni ishga tushirmasa va Application ob'ektini kutsa,
-    # bu qism shu holatga mos keladi.
-    # Lokal test qilish uchun quyidagicha qolishi mumkin, lekin Renderda ortiqcha bo'lishi mumkin.
-    # try:
-    #     asyncio.run(main())
-    # except KeyboardInterrupt:
-    #     logging.info("Bot stopped by KeyboardInterrupt.")
-    # except Exception as e:
-    #     logging.error(f"An error occurred: {e}")
-
-    # Render uchun to'g'ri usul (agar u __main__ ni faqat bir marta ishga tushirsa va Application obyektini kutsa)
-    # web.run_app(main(), host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
-    # Biroq, Render odatda 'start command' (masalan, `python main.py`) orqali ishga tushiradi
-    # va agar `main()` funksiyasi Application obyektini qaytarsa, u buni tushunishi kerak.
-    # Yuqoridagi `asyncio.run(main())` ni olib tashlash va `web.run_app` ni faqat lokal test uchun ishlatish tavsiya etiladi.
-    # Agar Renderda ishlamasa, Render.com loglarini tekshirib, qanday xato berayotganini ko'rish kerak.
-
-    # Render.com muhitida Python faylini ishga tushirish uchun odatda faqat `main()` chaqirish yetarli.
-    # Render avtomatik ravishda App serverini ishga tushiradi.
-    # Shuning uchun bu yerda `asyncio.run(main())` yoki `web.run_app()` ni chaqirishga hojat yo'q.
-    # Faqat bot obyektini tayyorlab, Renderning o'ziga Application obyektini "topshirish" kerak.
-    # Render o'zi ASGI/WSGI serverni ishga tushiradi.
-    # Lekin aiogram bilan webhook mode uchun, odatda `web.run_app` kerak bo'ladi.
-    # "Cannot run the event loop while another loop is running" xatosidan qochish uchun
-    # `asyncio.run(main())` ni olib tashlash va web.run_app ni to'g'ridan-to'g'ri chaqirish kerak.
-
-    # Renderda ishlatish uchun odatda mana bu qism kerak:
-    app = asyncio.run(main()) # main() endi Application qaytaradi, uni ishlatish uchun asyncio.run kerak
-    web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
+    with suppress(KeyboardInterrupt):
+        asyncio.run(start_webhook())
