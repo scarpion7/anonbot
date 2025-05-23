@@ -23,9 +23,9 @@ TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_USER_ID = int(os.getenv("ADMIN_USER_ID"))
 ADMIN_GROUP_ID = int(os.getenv("ADMIN_GROUP_ID"))
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
-# WEBHOOK_URL = os.getenv("WEBHOOK_URL") # Long-pollingda kerak emas
-# WEB_SERVER_HOST = "0.0.0.0" # Long-pollingda kerak emas
-# WEB_SERVER_PORT = int(os.getenv("PORT", 8000)) # Long-pollingda kerak emas
+WEBHOOK_URL = os.getenv("WEBHOOK_URL") # Long-pollingda kerak emas
+WEB_SERVER_HOST = "0.0.0.0" # Long-pollingda kerak emas
+WEB_SERVER_PORT = int(os.getenv("PORT", 8000)) # Long-pollingda kerak emas
 
 # Bot va dispatcher obyektlarini yaratish
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN))
