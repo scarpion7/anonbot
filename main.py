@@ -231,11 +231,11 @@ def family_husband_choice_keyboard():
 # Oila: Ayolning roziligi klaviaturasi (Erkak tanlovidan keyin) (Vertical)
 def family_wife_agreement_keyboard():
     builder = InlineKeyboardBuilder()
-    builder.row(types.InlineKeyboardButton(text="✅ Ha rozi", callback_data="wife_agree_yes"))
+    builder.row(types.InlineKeyboardButton(text="✅ Ha rozi", callback_data="wife_agree_rozi"))
     builder.row(
-        types.InlineKeyboardButton(text="🔄 Yo'q, lekin men istayman (kondiraman)", callback_data="wife_agree_convince"))
+        types.InlineKeyboardButton(text="🔄 Yo'q, lekin men istayman (ko'ndiraman)", callback_data="wife_agree_yo'q_ko'ndiraman"))
     builder.row(
-        types.InlineKeyboardButton(text="❓ Bilmayman, hali aytib ko'rmadim", callback_data="wife_agree_unknown"))
+        types.InlineKeyboardButton(text="❓ Bilmayman, hali aytib ko'rmadim", callback_data="wife_agree_bilmayman"))
     add_navigation_buttons(builder, "family_husband_choice")
     return builder.as_markup()
 
@@ -253,11 +253,11 @@ def family_wife_choice_keyboard():
 # Oila: Erkakning roziligi klaviaturasi (Ayol tanlovidan keyin) (Vertical)
 def family_husband_agreement_keyboard():
     builder = InlineKeyboardBuilder()
-    builder.row(types.InlineKeyboardButton(text="✅ Ha rozi", callback_data="husband_agree_yes"))
+    builder.row(types.InlineKeyboardButton(text="✅ Ha rozi", callback_data="husband_agree_rozi"))
     builder.row(types.InlineKeyboardButton(text="🔄 Yo'q, lekin men istayman (kondiraman)",
-                                           callback_data="husband_agree_convince"))
+                                           callback_data="husband_agree_yo'q_ko'ndiraman"))
     builder.row(
-        types.InlineKeyboardButton(text="❓ Bilmayman, hali aytib ko'rmadim", callback_data="husband_agree_unknown"))
+        types.InlineKeyboardButton(text="❓ Bilmayman, hali aytib ko'rmadim", callback_data="husband_agree_bilmayman"))
     add_navigation_buttons(builder, "family_wife_choice")
     return builder.as_markup()
 
