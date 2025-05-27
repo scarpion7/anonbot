@@ -1016,9 +1016,13 @@ async def forward_user_message_to_admins_and_group(message: types.Message):
 
     try:
         if message.text:
-            text_to_send = f"{user_info}\n\n*Matnli xabar:*\n{message.text}"
+            user_info_raw = f"{user.full_name} | ID: {user.id} {'@' + user.username if user.username else ''}"
+            user_info = f"👤 Foydalanuvchidan ({escape_markdown(user_info_raw)})"
+            text_to_send = f"{user_info}\n\n*Matnli xabar:*\n{escape_markdown(message.text)}"
+    
             await bot.send_message(ADMIN_USER_ID, text_to_send, reply_markup=reply_markup, parse_mode="Markdown")
             await bot.send_message(ADMIN_GROUP_ID, text_to_send, reply_markup=reply_markup, parse_mode="Markdown")
+
             logging.info(f"Forwarded text message from user {user.id}")
         elif message.photo:
             caption_text = f"{user_info}\n\n*Rasm xabar:*\n{message.caption if message.caption else ''}"
