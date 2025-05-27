@@ -410,16 +410,16 @@ async def send_application_to_destinations(data: dict, user: types.User):
                 'h_choice') == 'mjm':
             channel_text += f"👥 **MJM tajriba:** {data['mjm_experience']}\n"
         if data.get('wife_agreement') and data.get('author') == 'husband':
-            wife_agree_text = {'yes': '✅ Ha rozi', 'convince': '🔄 Yo\'q, lekin men istayman',
-                               'unknown': '❓ Bilmayman, hali aytmadim'}.get(data['wife_agreement'], 'None1')
+            wife_agree_text = {'yes': '✅ Ha rozi', 'Ha rozi': '🔄 Yo\'q, lekin men istayman',
+                               'Yo\'q, lekin men istayman': '❓ Bilmayman, hali aytmadim'}.get(data['wife_agreement'], 'None1')
             channel_text += f"👩‍⚕️ **Ayol roziligi:** {wife_agree_text}\n"
         if data.get('w_choice') and data.get('author') == 'wife':
             w_choice_text = {'mjm_husband': '👥 MJM (erim bilan)', 'mjm_strangers': '👥 MJM (begona 2 erkak bilan)',
                              'erkak': '👨 Erkak (erimdan qoniqmayapman)'}.get(data['w_choice'], 'None1')
             channel_text += f"🎯 **Ayol tanlovi:** {w_choice_text}\n"
         if data.get('husband_agreement') and data.get('author') == 'wife' and data.get('w_choice') == 'mjm_husband':
-            husband_agree_text = {'yes': '✅ Ha rozi', 'convince': '🔄 Yo\'q, lekin men istayman',
-                                  'unknown': '❓ Bilmayman, hali aytmadim'}.get(
+            husband_agree_text = {'yes': '✅ Ha rozi', ' Ha rozi': '🔄 Yo\'q, lekin men istayman',
+                                  'Yo\'q, lekin men istayman': '❓ Bilmayman, hali aytmadim'}.get(
                 data['husband_agreement'], 'None1')
             channel_text += f"👨‍⚕️ **Erkak roziligi:** {husband_agree_text}\n"
 
