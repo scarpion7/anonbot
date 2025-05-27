@@ -14,6 +14,13 @@ from aiogram.webhook.aiohttp_server import SimpleRequestHandler
 from aiohttp import web
 import asyncio  # aiohttpga kerak bo'ladi
 
+# Markdown belgilarini qochirish funksiyasi
+def escape_markdown(text: str) -> str:
+    escape_chars = r'\*_`[]()'
+    for ch in escape_chars:
+        text = text.replace(ch, f'\\{ch}')
+    return text
+
 load_dotenv()
 
 # Sozlamalar
@@ -998,6 +1005,9 @@ async def user_end_chat(message: types.Message, state: FSMContext):
 @dp.message(F.chat.id != ADMIN_USER_ID, F.chat.id != ADMIN_GROUP_ID, F.chat.id.in_(chat_mode_users))
 async def forward_user_message_to_admins_and_group(message: types.Message):
     user = message.from_user
+    user_info = f"👤 Foydalanuvchidan ({escape_markdown(user_info_raw)})"
+    text_to_send = f"{user_info}\n\n*Matnli xabar:*\n{escape_markdown(message.text)}"
+
     user_info = f"👤 Foydalanuvchidan ({user.full_name} | ID: `{user.id}` {'@' + user.username if user.username else ''})"
 
     builder = InlineKeyboardBuilder()
